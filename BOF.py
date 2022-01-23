@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+#BOF to root shell
 import sys,socket,argparse,subprocess,re,os
 from pwn import p32
 
