@@ -42,11 +42,11 @@ try:
         spoof(opt.tarGatway,opt.tarIP)
         pktCounter = pktCounter + 2
         print(f'\r{fc.pink_violet}[+]{fc.end} {fc.b}Packets sent: {pktCounter}{fc.end}',end='')
-    except Exception as e:
-        print(f'\tError: {fc.rw}{e}{fc.end}')
-        sys.exit()
+except Exception as e:
+    print(f'\tError: {fc.rw}{e}{fc.end}')
+    sys.exit()
 
 
-    except KeyboardInterrupt:
-        print('Abort')
+except KeyboardInterrupt:
+    print('Abort')
 
