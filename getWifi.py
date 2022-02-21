@@ -52,5 +52,5 @@ def getPass():
 
     return passwords
 print(getPass())
-#sendMail('benpro4433@gmail.com','burn3rp4ss',result)
+#sendMail('benpro4433@gmail.com','XXXXX',result)
 
