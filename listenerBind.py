@@ -1,23 +1,48 @@
-import socket, sys, json
+import socket, sys, json, argparse, subprocess
 from sys import getsizeof
+from itertools import cycle
+import multiprocessing, time
+
+class Args:
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-i','--IP',dest = 'ip', help = 'Enter target IP address.')
+        parser.add_argument('-p','--port',dest = 'port', help = 'Enter target port.')
+        parser.set_defaults(ip = self.get_ip())
+        parser.set_defaults(port = 1337)
+        options = parser.parse_args()
+        self.ip = options.ip
+        self.port = options.port
+        
+    
+    def get_ip(self):
+        pipecmd_ip = "/sbin/ip route | awk '/src/ { printf $9 }'"
+        ip = subprocess.check_output(pipecmd_ip,shell=True)
+        ip_decoded = ip.decode('utf-8')
+        self.ip = ip_decoded
+        return self.ip
 
 
 class Listener:
     
     
     def __init__(self,ip,port):
+        spinner = multiprocessing.Process(target=self.spinner)
         #self.byteTotal = 0
         self.listener = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         self.listener.bind((str(ip),port)) #bind to this machine! 127.0.0.1 might work to? 
         self.listener.listen(0)
-        print('Starting listener... waiting for connection') #add a threading spinner here
+        print('Starting listener on address {} and port {}.\nWaiting for connection...'.format(ip,port)) #add a threading spinner here
+        spinner.start()
         try:
             self.connection,address = self.listener.accept() #address is tuple with address and port
         except KeyboardInterrupt:
+            spinner.terminate()
             print('\nSIGINT caught, exiting...')
             sys.exit()
         #print(connection) #connection is the socket object with information about local address and remote address
+        spinner.terminate()
         print('Connection established with ' + str(address[0]) + ' on port ' + str(address[1]))
         print('Enter \'bye\' to close connection')
     
@@ -25,8 +50,16 @@ class Listener:
     def sendStream(self,data):
         jsData = json.dumps(data)
         self.connection.send(str(jsData).encode('utf-8'))
+    
+    
+    def spinner(self):
+        spinnerChars = ['-', '/', '|', '\\']
+        while True:
+            for char in cycle(spinnerChars):
+                print(char,end='\r')
+                time.sleep(.2)
 
-
+    
     def recvStream(self):
         jsData = ''
         #print(getsizeof(jsData))
@@ -78,8 +111,10 @@ class Listener:
                 sys.exit() 
           
 
+
 try:
-    listener = Listener('192.168.241.133',4444)
+    args = Args()
+    listener = Listener(args.ip,args.port)
     listener.run()
 except KeyboardInterrupt:
     print('Interrupt caught, exiting...')
