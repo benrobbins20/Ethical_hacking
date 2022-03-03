@@ -2,6 +2,8 @@ import socket, sys, json, argparse, subprocess
 from sys import getsizeof
 from itertools import cycle
 import multiprocessing, time
+
+
 class fc:
     rw = '\033[31;107m'
     r = '\033[38;5;196m'
@@ -14,7 +16,11 @@ class fc:
     cyan = '\033[36m'
     g = '\033[38;5;154m'
     b = '\033[38;5;45m'
+
+
 class Args:
+    
+    
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-i','--IP',dest = 'ip', help = 'Enter target IP address.')
@@ -87,6 +93,7 @@ class Listener:
                 print(f'{fc.rw}{e}{fc.end}\n{fc.wg}Incomplete stream, gathering remainder of data.{fc.end}')
                 continue
                 
+    
     def utf8len(self,string):
         return len(string.encode('utf-8'))
 
@@ -122,11 +129,17 @@ class Listener:
                 sys.exit() 
           
 
-
 try:
     args = Args()
     listener = Listener(args.ip,args.port)
     listener.run()
+
+
+except Exception as e:
+    print(f'\tError: {fc.rw}{e}{fc.end}')
+    sys.exit()
+
+
 except KeyboardInterrupt:
     print('Interrupt caught, exiting...')
     sys.exit()
