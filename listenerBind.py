@@ -125,8 +125,9 @@ class Listener:
                 print(f'{fc.purple}#{fc.end}'*100)
             else:
                 print(f'{fc.rw}Exit call received, closing connection{fc.end}')
+                self.sendStream('bye')
                 self.listener.close()
-                sys.exit() 
+                exit() 
           
 
 try:
