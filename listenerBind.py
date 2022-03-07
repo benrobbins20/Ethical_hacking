@@ -83,7 +83,8 @@ class Listener:
         while True:
             try:
                 recvData = self.connection.recv(1024)
-                recvData = recvData.decode()
+                if isinstance(recvData,bytes):
+                    recvData = recvData.decode()
                 #print(getsizeof(jsData))
                 #byteSize = getsizeof(jsData)
                 #self.byteTotal += byteSize
@@ -118,9 +119,9 @@ class Listener:
                         print(f'{fc.rw}Command must not be blank!{fc.end}')
                     else:
                         inputChecker = True
-                    print(cmd)
+                    #print(cmd)
                     cmd = cmd.split(' ')
-                    print(cmd)
+                    #print(cmd)
                 except KeyboardInterrupt:
                     self.sendStream(['bye'])
                     self.listener.close()

