@@ -26,7 +26,7 @@ file2 = ''
 
 
 try:
-    run(ip,file1,fil2)
+    run(ip,file1,file2)
 except: 
     sys.exit()
 
