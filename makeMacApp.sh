@@ -1,0 +1,1 @@
+pyinstaller bdMac.py --noconsole --onefile --add-data 'sample.pdf:/tmp' -i 4373076_adobe_file_logo_logos_pdf_icon.icns
