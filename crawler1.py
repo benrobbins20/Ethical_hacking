@@ -21,7 +21,7 @@ class Crawler:
                 #print(f'Trying get: {self.suburl}')
                 response = self.get(self.suburl)
                 if response:
-                    print(f'{response} >> http://{self.suburl}')
+                    print(f'\n{response} >> http://{self.suburl}')
                 else:
                     print(f'\r{line}                             ',end="")
 
