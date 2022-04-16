@@ -55,14 +55,12 @@ def mac_changer(inter,address=rand_mac):
 		subprocess.call(["sudo" ,"ifconfig", inter, "hw", "ether" ,address])
 		subprocess.call(["sudo" ,"ifconfig", inter, "up"])
 		subprocess.call(["sudo", "ifconfig", inter])
-		print("Reconnecting VPN...")
-		#time.sleep(10)
-		subprocess.call(["expressvpn", "status"])
-		#print(address)
-		#time.sleep(10)
+		try:
+			subprocess.call(["expressvpn", "status"])
+			print("Reconnecting VPN...")
+		except FileNotFoundError:
+			pass
 
-		#print(mac_returner(inter))
-		
 		if address == mac_returner(inter):
 			return "MAC address has been changed to {}".format(address)
 		else:
@@ -78,7 +76,7 @@ def mac_changer(inter,address=rand_mac):
 
 def mac_returner(inter):
 
-	pipecmd = "ifconfig wlan0 | grep ether | awk '{print $2}'"
+	pipecmd = "ifconfig " + opt.interface + " | grep ether | awk '{print $2}'"
 	ifconfig_out = subprocess.check_output(["ifconfig", opt.interface])
 	ifconfig_str = ifconfig_out.decode('utf-8')
 	out = subprocess.check_output(pipecmd, shell=True)
@@ -93,8 +91,3 @@ def mac_returner(inter):
 
 opt = get_args()
 print(mac_changer(opt.interface,opt.mac))
-
-
-
-
-
