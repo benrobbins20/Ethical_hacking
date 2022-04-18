@@ -14,17 +14,15 @@ def parseLinks(baseurl,get): #function will not use requests, import headers fro
 		except:
 			get = str(get)
 
-	print(f'Get test: {get[0:50]}\n{type(get)}')
-	returnLinks = []
-	fullLink = []
+	#print(f'Get test: {get[0:50]}\t\t{type(get)}')
+	links = []
 	hrefs = re.findall('(?:href=")(.*?)"',get)
-	for href in hrefs:
-		#if b'div' not in href:
-		returnLinks.append(href)
-	for link in returnLinks:
-		link = urljoin(baseurl,link)
-		fullLink.append(link)
-	return fullLink
+	for link in hrefs:
+		if 'http' or 'https' not in link:
+			link = urljoin(baseurl,link) 
+			if baseurl in link:
+				links.append(link)
+	return links
 
 def geturlLinks(url): #using requests in func
 	response = requests.get(url,headers={'User-Agent':ua.random})
@@ -83,5 +81,5 @@ def lstLinks(lst):
 
 ########################################################RUN###################################################################
 
-lst = parseLinks("http://zsecurity.org",selGet("http://zsecurity.org"))
+lst = parseLinks("https://zsecurity.org",selGet("https://zsecurity.org"))
 lstLinks(lst)
