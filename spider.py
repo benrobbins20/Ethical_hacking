@@ -1,78 +1,53 @@
-from crawler2 import Crawler
 import re, requests
-#from fake_useragent import UserAgent
+from fake_useragent import UserAgent
 from urllib.request import Request, urlopen
-#ua = UserAgent()
-hdrs = {
-	'Host': 'zsecurity.org',
-	'Referer': 'https://www.google.com/',
-	'User-Agent': "Chrome/100.0.4896.88",
-	'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-	'Accept-Language': 'en-US,en;q=0.5',
-	'Accept-Encoding': 'gzip, deflate, br',
-	'DNT': '1',
-	'Upgrade-Insecure-Requests': '1',
-	'Connection': 'keep-alive',
-	'Sec-Fetch-Dest': 'document',
-	'Sec-Fetch-Mode': 'navigate',
-	'Sec-Fetch-Site': 'none',
-	'Sec-Fetch-User': '?1',
-	}
-#GET / HTTP/3
-#Host: zsecurity.org
-#User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0
-#Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-#Accept-Language: en-US,en;q=0.5
-#Accept-Encoding: gzip, deflate, br
-#DNT: 1
-#Connection: keep-alive
-#Cookie: _learn_press_session_a6dd6ba6ff5d4b813ae004e5a9eab2ca=ea95b40d06dfa8db35cf76afc414ad1c%7C%7C1650132223%7C%7C4ff1338be3d2fb1a4bc529f8f2ef42f7; PHPSESSID=8m0evj368sjq82oi53l64mp1vl; _gcl_au=1.1.230257486.1649959431
-#Upgrade-Insecure-Requests: 1
-#Sec-Fetch-Dest: document
-#Sec-Fetch-Mode: navigate
-#Sec-Fetch-Site: none
-#Sec-Fetch-User: ?1
+from urllib.parse import urljoin
+from zsecHeaders import zsecurityResponse
+#print(zsecurityResponse)
+from selenium import webdriver
+ua = UserAgent()
 
-def getLinks(get): #getLinks uses Crawler get() method
+def parseLinks(baseurl,get): #function will not use requests, import headers from another file, pass get.content into function
+	if isinstance(get,bytes):
+		try:
+			get = get.decode()
+		except:
+			get = str(get)
+
+	print(f'Get test: {get[0:50]}\n{type(get)}')
 	returnLinks = []
-	if get:
-		content = get.content
-		#print(type(content))
-		#with open('content.txt','w') as wf:
-		#wf.write(str(response))
-		#print(content)
-		#print(type(content))
-		hrefs = re.findall(b'(?:href=")(.*?)"',content)
-		for href in hrefs:
-			if b'div' not in href:
-				returnLinks.append(href)
-		return returnLinks
+	fullLink = []
+	hrefs = re.findall('(?:href=")(.*?)"',get)
+	for href in hrefs:
+		#if b'div' not in href:
+		returnLinks.append(href)
+	for link in returnLinks:
+		link = urljoin(baseurl,link)
+		fullLink.append(link)
+	return fullLink
 
 def geturlLinks(url): #using requests in func
-	#{"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0"}
-	#headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:99.0) Gecko/20100101 Firefox/99.0'}
-	#headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0"}
-	#headers = {"user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36"}
-	#headers = {'Accept-Language': 'en-US;q=0.7,en;q=0.3'}
-	headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0"}
-	response = requests.get(url,headers=headers)
-	print(response)
+	response = requests.get(url,headers={'User-Agent':ua.random})
+	print(f'Status code: {response.status_code}')
 	returnLinks = []
-	if response:
-		if response == 200: # sanity check
-			print(response,'STATUS CODE')
-		hrefs = re.findall(b'(?:href=")(.*?)"',response.content)
+	fullLink = []
+	if response:	
+		hrefs = re.findall('(?:href=")(.*?)"',str(response.content))
 		for href in hrefs:
-			if b'div' not in href:
-				returnLinks.append(href)
-		return returnLinks
+			#if b'div' not in href:
+			returnLinks.append(href)
+	for link in returnLinks:
+		link = urljoin(url,link)
+		fullLink.append(link)
+	return fullLink
+		#return returnLinks
+
 def gethtml(url):
 	#headers = ({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36','Accept-Language': 'en-US, en;q=0.5'})
 	response = requests.get(url,headers = hdrs)
 	if response:
 		if response == 200: # sanity check
-			print(response,'STATUS CODE')
-		
+			print(response,'STATUS CODE')		
 		return response.content
 
 def gethtmlLib(url):
@@ -87,13 +62,26 @@ def gethtmlLib(url):
 	#print(data)
 	#return infile.decode()
 
+def selGet(url):
+	fireFoxOptions = webdriver.FirefoxOptions()
+	#print(dir(fireFoxOptions))
+	fireFoxOptions.headless = True
+	brower = webdriver.Firefox(options = fireFoxOptions)
+	brower.get(url)
+	return (brower.page_source)# when requests or urllib does not work, can run selenium headless to get page source
+
+def lstLinks(lst):
+	for link in lst:
+		print(link)
+
+########################################################EXAMPLES###############################################################
+
+#lst = (geturlLinks("http://chegg.com"))
+#lst = parseLinks("http://zsecurity.org",selGet("http://zsecurity.org"))
+#lst = (geturlLinks("http://192.168.86.115/mutillidae"))
 
 
+########################################################RUN###################################################################
 
-#c2 = Crawler('reddit.com')
-#print(getLinks(c2.get()))
-#print(geturlLinks("http://webcache.googleusercontent.com/search?q=cache:www.zsecurity.org"))
-#print(gethtml("http://webcache.googleusercontent.com/search?q=cache:www.zsecurity.org")) #kind of interesting to see cache data, not real time so not ideal for scraping
-print(gethtml('https://zsecurity.org/'))
-#print(gethtmlLib("http://zsecurity.org"))
-
+lst = parseLinks("http://zsecurity.org",selGet("http://zsecurity.org"))
+lstLinks(lst)
