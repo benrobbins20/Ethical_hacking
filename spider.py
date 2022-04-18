@@ -3,7 +3,6 @@ from fake_useragent import UserAgent
 from urllib.request import Request, urlopen
 from urllib.parse import urljoin
 from zsecHeaders import zsecurityResponse
-#print(zsecurityResponse)
 from selenium import webdriver
 ua = UserAgent()
 
@@ -18,10 +17,15 @@ def parseLinks(baseurl,get): #function will not use requests, import headers fro
 	links = []
 	hrefs = re.findall('(?:href=")(.*?)"',get)
 	for link in hrefs:
+		
 		if 'http' or 'https' not in link:
-			link = urljoin(baseurl,link) 
-			if baseurl in link:
-				links.append(link)
+			link = urljoin(baseurl,link)
+		
+		if '#' in link:
+			link = link.split('#')[0]
+
+		if baseurl in link and link not in links:
+			links.append(link)
 	return links
 
 def geturlLinks(url): #using requests in func
@@ -81,5 +85,5 @@ def lstLinks(lst):
 
 ########################################################RUN###################################################################
 
-lst = parseLinks("https://zsecurity.org",selGet("https://zsecurity.org"))
+lst = parseLinks("https://zsecurity.org",selGet("https://zsecurity.org/product/realtek-rtl8812au-2-4-5-ghz-usb-wireless-adapter/"))
 lstLinks(lst)
