@@ -18,8 +18,7 @@ def crawlerSel(url):
 	parsedLinks = parseLinks(selGet(url))
 
 	for link in parsedLinks:
-		if '.rss' not in link:
-		
+		if not link.endswith('feed/'):
 			if 'http' or 'https' not in link:
 				link = urljoin(url,link)
 			
@@ -34,6 +33,8 @@ def crawlerSel(url):
 				except:
 					print(f'\nCould not extract links from {link}\n')
 					pass
+		else:
+			print(f'Feed link detected at {link}')
 
 def crawlerReq(url):
 	parsedLinks = parseLinks(reqGet(url))
@@ -121,12 +122,6 @@ def gethtmlLib(url):
 	page = Request(url,headers=headers)
 	webpage = urlopen(page).read()
 	print(webpage.decode(""))
-
-	#infile=urllib.request.urlopen(page).read()
-	#print(infile[0:50])
-	#data = infile.decode()
-	#print(data)
-	#return infile.decode()
 
 def selGet(url):
 	fireFoxOptions = webdriver.FirefoxOptions()
