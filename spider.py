@@ -1,33 +1,99 @@
-import re, requests
+import re, requests, time
 from fake_useragent import UserAgent
 from urllib.request import Request, urlopen
 from urllib.parse import urljoin
-from zsecHeaders import zsecurityResponse
 from selenium import webdriver
 ua = UserAgent()
 
-def parseLinks(baseurl,get): #function will not use requests, import headers from another file, pass get.content into function
+def parseLinks(get):
 	if isinstance(get,bytes):
 		try:
 			get = get.decode()
 		except:
 			get = str(get)
+	
+	return re.findall('(?:href=")(.*?)"',get)
 
-	#print(f'Get test: {get[0:50]}\t\t{type(get)}')
-	links = []
-	hrefs = re.findall('(?:href=")(.*?)"',get)
-	for link in hrefs:
+def crawlerSel(url):
+	parsedLinks = parseLinks(selGet(url))
+
+	for link in parsedLinks:
+		if '.rss' not in link:
+		
+			if 'http' or 'https' not in link:
+				link = urljoin(url,link)
+			
+			if '#' in link:
+				link = link.split('#')[0]
+
+			if url in link and link not in storeLinks:
+				storeLinks.append(link)
+				print(link)
+				try:
+					crawlerSel(link)
+				except:
+					print(f'\nCould not extract links from {link}\n')
+					pass
+
+def crawlerReq(url):
+	parsedLinks = parseLinks(reqGet(url))
+	#print(parsedLinks)
+	
+	for link in parsedLinks:	
 		
 		if 'http' or 'https' not in link:
-			link = urljoin(baseurl,link)
+			link = urljoin(url,link)
+			#print(f'link joined: {link}')
 		
 		if '#' in link:
 			link = link.split('#')[0]
+   
 
-		if baseurl in link and link not in links:
-			links.append(link)
-	return links
+		if url in link and link not in storeLinks:
+			storeLinks.append(link)
+			print(link)
+			try:
+				crawlerReq(link)
+			except:
+				print(f'Could not extracxt links from {link}')
+				pass
 
+def extract(url):
+    get = requests.get(url)
+    return re.findall('(?:href=")(.*?)"',str(get.content))
+
+def crawl(url):
+    href_links = extract(url)
+    #print(f'href from {url}\n\n{href_links}')
+    
+    for link in href_links:
+        link = urljoin(url,link)
+        #print(link)
+        if '#' in link:
+            link = link.split('#')[0]
+        if url in link and link not in temp:
+            temp.append(link)
+            print(link)
+            crawl(link)
+        
+def crawlerBase(url):
+    while True:
+        checkType = input('Enter sel for selenium or req for requests')
+        if checkType == 'sel' or 'req':
+            break
+    if checkType == 'sel':
+    	parsedLinks = parseLinks(selGet(url))
+    elif checkType == 'req':
+        parsedLinks = parseLinks(reqGet(url))
+    links = []
+    for link in parseLinks(selGet(url)):
+        if 'http' or 'https' not in link:
+            link = urljoin(url,link)
+        if '#' in link:
+            link = link.split('#')[0]
+        if url in link and link not in links:
+            print(link)
+            
 def geturlLinks(url): #using requests in func
 	response = requests.get(url,headers={'User-Agent':ua.random})
 	print(f'Status code: {response.status_code}')
@@ -44,12 +110,10 @@ def geturlLinks(url): #using requests in func
 	return fullLink
 		#return returnLinks
 
-def gethtml(url):
-	#headers = ({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36','Accept-Language': 'en-US, en;q=0.5'})
-	response = requests.get(url,headers = hdrs)
-	if response:
-		if response == 200: # sanity check
-			print(response,'STATUS CODE')		
+def reqGet(url):
+	headers = ({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36','Accept-Language': 'en-US, en;q=0.5'})
+	response = requests.get(url,headers = headers)
+	if response:		
 		return response.content
 
 def gethtmlLib(url):
@@ -78,12 +142,9 @@ def lstLinks(lst):
 
 ########################################################EXAMPLES###############################################################
 
-#lst = (geturlLinks("http://chegg.com"))
-#lst = parseLinks("http://zsecurity.org",selGet("http://zsecurity.org"))
-#lst = (geturlLinks("http://192.168.86.115/mutillidae"))
 
 
 ########################################################RUN###################################################################
 
-lst = parseLinks("https://zsecurity.org",selGet("https://zsecurity.org/product/realtek-rtl8812au-2-4-5-ghz-usb-wireless-adapter/"))
-lstLinks(lst)
+storeLinks = []
+crawlerSel('https://zsecurity.org')
