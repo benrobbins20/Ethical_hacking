@@ -1,10 +1,16 @@
-import re, requests, time
+import re, requests, time, argparse
 from fake_useragent import UserAgent
 from urllib.request import Request, urlopen
 from urllib.parse import urljoin
 from selenium import webdriver
 ua = UserAgent()
 
+def args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u','--URL',dest = 'url', help = 'Enter target URL address')
+    options = parser.parse_args()
+    return options
+    
 def parseLinks(get):
 	if isinstance(get,bytes):
 		try:
@@ -58,7 +64,7 @@ def crawlerReq(url):
 			try:
 				crawlerReq(link)
 			except:
-				print(f'Could not extracxt links from {link}')
+				print(f'Could not extract links from {link}')
 				pass
 
 def extract(url):
@@ -136,12 +142,21 @@ def selGet(url):
 def lstLinks(lst):
 	for link in lst:
 		print(link)
-
-########################################################EXAMPLES###############################################################
-
-
-
+  
+def run():
+    global storeLinks
+    global args
+    storeLinks = []
+    args = args()
+    while True:
+        runType = input('Enter \'sel\' to use selenium or \'req\' to use reuqests\n:')
+        if runType == 'sel' or runType == 'req':
+            break
+    if runType == 'sel':
+        crawlerSel(args.url)
+    elif runType == 'req':
+        crawlerReq(args.url)
+        
 ########################################################RUN###################################################################
 
-storeLinks = []
-crawlerSel('https://zsecurity.org')
+run()
