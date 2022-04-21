@@ -34,7 +34,9 @@ def crawlerSel(url):
 					print(f'\nCould not extract links from {link}\n')
 					pass
 		else:
-			print(f'Feed link detected at {link}')
+			if link not in storeLinks:
+				storeLinks.append(link)
+				print(link)
 
 def crawlerReq(url):
 	parsedLinks = parseLinks(reqGet(url))
