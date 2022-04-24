@@ -1,4 +1,4 @@
-import re, requests, time, argparse
+import re, requests, time, argparse, sys
 from fake_useragent import UserAgent
 from urllib.request import Request, urlopen
 from urllib.parse import urljoin
@@ -22,10 +22,11 @@ def parseLinks(get):
 
 def crawlerSel(url):
 	parsedLinks = parseLinks(selGet(url))
-
 	for link in parsedLinks:
+		
 		if not link.endswith('feed/'):
-			if 'http' or 'https' not in link:
+			
+			if 'http' not in link or 'https' not in link:
 				link = urljoin(url,link)
 			
 			if '#' in link:
@@ -46,11 +47,9 @@ def crawlerSel(url):
 
 def crawlerReq(url):
 	parsedLinks = parseLinks(reqGet(url))
-	#print(parsedLinks)
-	
 	for link in parsedLinks:	
 		
-		if 'http' or 'https' not in link:
+		if 'http' not in link and 'https' not in link:
 			link = urljoin(url,link)
 			#print(f'link joined: {link}')
 		
@@ -120,10 +119,12 @@ def geturlLinks(url): #using requests in func
 		#return returnLinks
 
 def reqGet(url):
-	headers = ({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36','Accept-Language': 'en-US, en;q=0.5'})
-	response = requests.get(url,headers = headers)
-	if response:		
-		return response.content
+	try:
+		response = requests.get(url,headers = {'User-Agent': ua.random})
+		if response.status_code == 200:
+			return response.content
+	except Exception as e:
+		print(e)
 
 def gethtmlLib(url):
 	page = urllib.request.Request(url,headers=headers)
@@ -144,19 +145,31 @@ def lstLinks(lst):
 		print(link)
   
 def run():
-    global storeLinks
-    global args
-    storeLinks = []
-    args = args()
-    while True:
-        runType = input('Enter \'sel\' to use selenium or \'req\' to use reuqests\n:')
-        if runType == 'sel' or runType == 'req':
-            break
-    if runType == 'sel':
-        crawlerSel(args.url)
-    elif runType == 'req':
-        crawlerReq(args.url)
-        
+	global storeLinks
+	global args
+	storeLinks = []
+	args = args()
+	print(args.url)
+	if not args.url.endswith('/'):
+		args.url = args.url + '/'
+		print(f'Confirm URL: {args.url}')
+		while True:
+			validateURL = input(f'URL Correct? y/n\n:')
+			validateURL = validateURL.lower()
+			if validateURL == 'y':
+				break
+			elif validateURL == 'n':
+				print('URL error, Qutting...')
+				sys.exit()
+	while True:
+		runType = input('Enter \'sel\' to use selenium or \'req\' to use reqests\n:')
+		if runType == 'sel' or runType == 'req':
+			break
+	if runType == 'sel':
+		crawlerSel(args.url)
+	elif runType == 'req':
+		crawlerReq(args.url)
+
 ########################################################RUN###################################################################
 
 run()
