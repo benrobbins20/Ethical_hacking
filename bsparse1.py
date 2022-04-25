@@ -12,4 +12,9 @@ response = get('http://192.168.86.115/mutillidae/index.php?page=dns-lookup.php')
 bsparse = BeautifulSoup(response.content,"html.parser")
 forms = bsparse.findAll('form')
 for form in forms:
-    print(forms)
+    action = form.get('action')
+    method = form.get('method')
+    print(action,method)
+    inputList = form.findAll('input')
+    for i in inputList:
+        print(i.get('name'))
