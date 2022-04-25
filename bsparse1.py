@@ -1,20 +1,53 @@
-import requests
+import requests, argparse
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from fake_useragent import UserAgent
 ua = UserAgent()
+
+def args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u','--URL',dest='url',help='Enter target URL.')
+    options = parser.parse_args()
+    return options
+    
 def get(url):
     try:
-        return requests.get(url,headers={'User-Agent':ua.random})
+        resp = requests.get(url,headers={'User-Agent':ua.random})
+        if resp.status_code == 200:
+            return resp.content
+        else:
+            return None
     except Exception as e:
         print(e,'passing..')
         pass
-response = get('http://192.168.86.115/mutillidae/index.php?page=dns-lookup.php')
-bsparse = BeautifulSoup(response.content,"html.parser")
-forms = bsparse.findAll('form')
-for form in forms:
-    action = form.get('action')
-    method = form.get('method')
-    print(action,method)
-    inputList = form.findAll('input')
-    for i in inputList:
-        print(i.get('name'))
+
+def parse(url):
+    response = get(url)
+    counter = 1
+    if response != None:
+        bsparse = BeautifulSoup(response,"html.parser")
+        forms = bsparse.findAll('form')
+        for form in forms:
+            action = form.get('action')
+            fullurl = (urljoin(url, action))
+            method = form.get('method')
+            print(f'Relative url: {action}')
+            print(f'Joined url: {fullurl}')
+            print(f'Method: {method}')
+            inputList = form.findAll('input')
+            postData = {}
+            for i in inputList:
+                print(f'Input {counter}: {i}')
+                inputName = i.get('name')
+                inputType = i.get('type')
+                inputValue = i.get('value')
+                if inputType == 'text':
+                    inputValue = 'test'
+                postData[inputName] = inputValue
+                counter += 1
+            result = requests.post(fullurl,data = postData)
+            bsPage = (BeautifulSoup(result.content,'html.parser'))
+            print(bsPage.findAll('p'))
+            
+args=args()                    
+parse(args.url)
