@@ -1,4 +1,5 @@
 from spider import Spider
+from bs4 import BeautifulSoup
 import argparse
 
 class Args:
@@ -11,14 +12,22 @@ class Args:
 
 class Vulnscan:
 	def __init__(self,url):
-		spider = Spider(url)
-		spider.run()
+		self.spider = Spider(url)
+		self.url = url
 		self.storeLinks = spider.storeLinks
-		#print(f'storeLinks: \n\n{self.storeLinks}')
 
 	def listLinks(self,lst):
+		spider.run()
+		self.storeLinks = self.spider.storeLinks # not sure how to do this best, would want to pass the list straight to the method, call spider.run seperate
 		for link in lst:
 			print(link)
+	
+	def postData(self):
+		html = self.spider.reqGet(self.url)
+		bsparse = BeautifulSoup(html,"html.parser")
+		postData = {}
+		print(bsparse)
+	
 
 
 
@@ -30,6 +39,8 @@ class Vulnscan:
 
 args = Args()
 v1 = Vulnscan(args.url)
-v1.listLinks(v1.storeLinks)
+#v1.listLinks(v1.storeLinks)
+v1.postData()
+
 
 
