@@ -30,17 +30,19 @@ class Spider:
 					link = link.split('#')[0]
 				if self.url in link and link not in self.storeLinks:
 					self.storeLinks.append(link)
-					print(link)
+					#print(link)
 					try:
 						self.crawlerSel(link)
 					except:
-						print(f'\nCould not extract links from {link}\n')
+						#print(f'\nCould not extract links from {link}\n')
+						#print(f'link is stored: {link in self.storeLinks}')
 						pass
 			else:
 				if link not in self.storeLinks:
-					storeLinks.append(link)
-					print(link)
-
+					self.storeLinks.append(link)
+					#print(link)
+					#print(f'link is stored: {link in self.storeLinks}')
+					
 	def crawlerReq(self,url):
 		parsedLinks = self.parseLinks(self.reqGet(url))
 		for link in parsedLinks:
@@ -50,29 +52,30 @@ class Spider:
 				link = link.split('#')[0]
 			if url in link and link not in self.storeLinks:
 				self.storeLinks.append(link)
-				print(f'Normal link: {link}')
+				#print(link)
 				try:
 					self.crawlerReq(link)
 				except:
-					print(f'Could not extract links from {link}')
+					#print(f'Could not extract links from {link}')
+					#print(f'link is stored: {link in self.storeLinks}')
 					pass
 			
-	def crawlerBase(self): #Non-recursive, just collects href links, has options for sel or req
+	def crawlerBase(self,url): #Non-recursive, just collects href links, has options for sel or req
 		while True:
-			checkType = input('Enter sel for selenium or req for requests')
-			if checkType == 'sel' or checkType == 'req':
+			checkType = input('Enter \'sel\' for selenium or \'req\' for requests\n:')
+			if checkType in ['sel', 'req']:
 				break
 		if checkType == 'sel':
-			parsedLinks = self.parseLinks(self.selGet())
+			parsedLinks = self.parseLinks(self.selGet(url))
 		elif checkType == 'req':
-			parsedLinks = self.parseLinks(self.reqGet())
+			parsedLinks = self.parseLinks(self.reqGet(url))
 		links = []
-		for link in self.parseLinks(self.selGet()):
+		for link in self.parseLinks(self.selGet(url)):
 			if 'http' or 'https' not in link:
-				link = urljoin(self.url,link)
+				link = urljoin(url,link)
 			if '#' in link:
 				link = link.split('#')[0]
-			if self.url in link and link not in self.storeLinks:
+			if url in link and link not in self.storeLinks:
 				print(link)
 
 	def reqGet(self,url):
@@ -88,10 +91,13 @@ class Spider:
 		if url == None:
 			url = self.url
 		page = Request(url, headers = {'User-Agent':self.ua.random})
+		print(page)
 		webpage = urlopen(page).read()
-		return (webpage.decode(""))
+		print(webpage)
 
-	def selGet(self, url):
+	def selGet(self, url=None):
+		if url == None:
+			url = self.url
 		fireFoxOptions = webdriver.FirefoxOptions()
 		fireFoxOptions.headless = True
 		browser = webdriver.Firefox(options = fireFoxOptions)
@@ -110,18 +116,23 @@ class Spider:
 				print('URL error, Qutting...')
 				sys.exit()
 		while True:
-			runType = input('Enter \'sel\' to use selenium or \'req\' to use reqests\n:')
-			if runType == 'sel' or runType == 'req':
+			runType = input('Enter \'sel\' to use selenium | \'req\' to use requests | \'get\' to parse links for one url\n:')
+			if runType in  ['sel', 'req', 'get']:
 				break
 		if runType == 'sel':
 			self.crawlerSel(self.url)
 		elif runType == 'req':
 			self.crawlerReq(self.url)
+		elif runType == 'get':
+			self.crawlerBase(self.url)
 
 ########################################################RUN###################################################################
 try:
 	spider = Spider('http://192.168.86.115')
+	#linklist = spider.parseLinks(spider.selGet())
+	#print(linklist)
 	spider.run()
+	print(spider.storeLinks)
 except:
 	print(traceback.format_exc())
 
