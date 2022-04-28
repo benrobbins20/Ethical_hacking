@@ -127,13 +127,13 @@ class Spider:
 			self.crawlerBase(self.url)
 
 ########################################################RUN###################################################################
-try:
-	spider = Spider('http://192.168.86.115')
+#try:
+	#spider = Spider('http://192.168.86.115')
 	#linklist = spider.parseLinks(spider.selGet())
 	#print(linklist)
-	spider.run()
-	print(spider.storeLinks)
-except:
-	print(traceback.format_exc())
+	#spider.run()
+	#print(spider.storeLinks)
+#except:
+	#print(traceback.format_exc())
 
 
