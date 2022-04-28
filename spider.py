@@ -1,175 +1,128 @@
-import re, requests, time, argparse, sys
+import re, requests, time, argparse, sys, traceback
 from fake_useragent import UserAgent
 from urllib.request import Request, urlopen
 from urllib.parse import urljoin
 from selenium import webdriver
-ua = UserAgent()
+from bs4 import BeautifulSoup
 
-def args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-u','--URL',dest = 'url', help = 'Enter target URL address')
-    options = parser.parse_args()
-    return options
-    
-def parseLinks(get):
-	if isinstance(get,bytes):
-		try:
-			get = get.decode()
-		except:
-			get = str(get)
+class Spider:
 	
-	return re.findall('(?:href=")(.*?)"',get)
-
-def crawlerSel(url):
-	parsedLinks = parseLinks(selGet(url))
-	for link in parsedLinks:
+	def __init__(self,url):
+		self.storeLinks = []
+		self.ua = UserAgent()
+		self.url = url
 		
-		if not link.endswith('feed/'):
-			
-			if 'http' not in link or 'https' not in link:
+	def parseLinks(self,get): #using regex to parse href links not bs yet, returns a list 
+		if isinstance(get,bytes):
+			try:
+				get = get.decode()
+			except:
+				get = str(get)
+		return re.findall('(?:href=")(.*?)"',get) #returns list of matches 
+
+	def crawlerSel(self,url):
+		parsedLinks = self.parseLinks(self.selGet(url))
+		for link in parsedLinks:
+			if not link.endswith('feed/'):
+				if 'http' not in link or 'https' not in link:
+					link = urljoin(url,link)	
+				if '#' in link:
+					link = link.split('#')[0]
+				if self.url in link and link not in self.storeLinks:
+					self.storeLinks.append(link)
+					print(link)
+					try:
+						self.crawlerSel(link)
+					except:
+						print(f'\nCould not extract links from {link}\n')
+						pass
+			else:
+				if link not in self.storeLinks:
+					storeLinks.append(link)
+					print(link)
+
+	def crawlerReq(self,url):
+		parsedLinks = self.parseLinks(self.reqGet(url))
+		for link in parsedLinks:
+			if 'http' not in link and 'https' not in link:
 				link = urljoin(url,link)
-			
 			if '#' in link:
 				link = link.split('#')[0]
-
-			if url in link and link not in storeLinks:
-				storeLinks.append(link)
-				print(link)
+			if url in link and link not in self.storeLinks:
+				self.storeLinks.append(link)
+				print(f'Normal link: {link}')
 				try:
-					crawlerSel(link)
+					self.crawlerReq(link)
 				except:
-					print(f'\nCould not extract links from {link}\n')
+					print(f'Could not extract links from {link}')
 					pass
-		else:
-			if link not in storeLinks:
-				storeLinks.append(link)
+			
+	def crawlerBase(self): #Non-recursive, just collects href links, has options for sel or req
+		while True:
+			checkType = input('Enter sel for selenium or req for requests')
+			if checkType == 'sel' or checkType == 'req':
+				break
+		if checkType == 'sel':
+			parsedLinks = self.parseLinks(self.selGet())
+		elif checkType == 'req':
+			parsedLinks = self.parseLinks(self.reqGet())
+		links = []
+		for link in self.parseLinks(self.selGet()):
+			if 'http' or 'https' not in link:
+				link = urljoin(self.url,link)
+			if '#' in link:
+				link = link.split('#')[0]
+			if self.url in link and link not in self.storeLinks:
 				print(link)
 
-def crawlerReq(url):
-	parsedLinks = parseLinks(reqGet(url))
-	for link in parsedLinks:	
-		
-		if 'http' not in link and 'https' not in link:
-			link = urljoin(url,link)
-			#print(f'link joined: {link}')
-		
-		if '#' in link:
-			link = link.split('#')[0]
-   
+	def reqGet(self,url):
+		try:
+			response = requests.get(url,headers = {'User-Agent': self.ua.random})
+			if response.status_code == 200:
+				return response.content
+		except Exception:
+			print(traceback.format_exc())
+			return None
 
-		if url in link and link not in storeLinks:
-			storeLinks.append(link)
-			print(link)
-			try:
-				crawlerReq(link)
-			except:
-				print(f'Could not extract links from {link}')
-				pass
+	def gethtmlLib(self,url=None):
+		if url == None:
+			url = self.url
+		page = Request(url, headers = {'User-Agent':self.ua.random})
+		webpage = urlopen(page).read()
+		return (webpage.decode(""))
 
-def extract(url):
-    get = requests.get(url)
-    return re.findall('(?:href=")(.*?)"',str(get.content))
-
-def crawl(url):
-    href_links = extract(url)
-    #print(f'href from {url}\n\n{href_links}')
-    
-    for link in href_links:
-        link = urljoin(url,link)
-        #print(link)
-        if '#' in link:
-            link = link.split('#')[0]
-        if url in link and link not in temp:
-            temp.append(link)
-            print(link)
-            crawl(link)
-        
-def crawlerBase(url):
-    while True:
-        checkType = input('Enter sel for selenium or req for requests')
-        if checkType == 'sel' or 'req':
-            break
-    if checkType == 'sel':
-    	parsedLinks = parseLinks(selGet(url))
-    elif checkType == 'req':
-        parsedLinks = parseLinks(reqGet(url))
-    links = []
-    for link in parseLinks(selGet(url)):
-        if 'http' or 'https' not in link:
-            link = urljoin(url,link)
-        if '#' in link:
-            link = link.split('#')[0]
-        if url in link and link not in links:
-            print(link)
-            
-def geturlLinks(url): #using requests in func
-	response = requests.get(url,headers={'User-Agent':ua.random})
-	print(f'Status code: {response.status_code}')
-	returnLinks = []
-	fullLink = []
-	if response:	
-		hrefs = re.findall('(?:href=")(.*?)"',str(response.content))
-		for href in hrefs:
-			#if b'div' not in href:
-			returnLinks.append(href)
-	for link in returnLinks:
-		link = urljoin(url,link)
-		fullLink.append(link)
-	return fullLink
-		#return returnLinks
-
-def reqGet(url):
-	try:
-		response = requests.get(url,headers = {'User-Agent': ua.random})
-		if response.status_code == 200:
-			return response.content
-	except Exception as e:
-		print(e)
-
-def gethtmlLib(url):
-	page = urllib.request.Request(url,headers=headers)
-	page = Request(url,headers=headers)
-	webpage = urlopen(page).read()
-	print(webpage.decode(""))
-
-def selGet(url):
-	fireFoxOptions = webdriver.FirefoxOptions()
-	#print(dir(fireFoxOptions))
-	fireFoxOptions.headless = True
-	brower = webdriver.Firefox(options = fireFoxOptions)
-	brower.get(url)
-	return (brower.page_source)# when requests or urllib does not work, can run selenium headless to get page source
-
-def lstLinks(lst):
-	for link in lst:
-		print(link)
-  
-def run():
-	global storeLinks
-	global args
-	storeLinks = []
-	args = args()
-	print(args.url)
-	if not args.url.endswith('/'):
-		args.url = args.url + '/'
-		print(f'Confirm URL: {args.url}')
+	def selGet(self, url):
+		fireFoxOptions = webdriver.FirefoxOptions()
+		fireFoxOptions.headless = True
+		browser = webdriver.Firefox(options = fireFoxOptions)
+		browser.get(url)
+		return (browser.page_source)# when requests or self.urllib does not work, can run selenium headless to get page source
+	
+	def run(self):
+		if not self.url.endswith('/'):
+			self.url = self.url + '/'
 		while True:
-			validateURL = input(f'URL Correct? y/n\n:')
+			validateURL = input(f'Confirm URL: {self.url}\nURL Correct? y/n\n:')
 			validateURL = validateURL.lower()
 			if validateURL == 'y':
 				break
 			elif validateURL == 'n':
 				print('URL error, Qutting...')
 				sys.exit()
-	while True:
-		runType = input('Enter \'sel\' to use selenium or \'req\' to use reqests\n:')
-		if runType == 'sel' or runType == 'req':
-			break
-	if runType == 'sel':
-		crawlerSel(args.url)
-	elif runType == 'req':
-		crawlerReq(args.url)
+		while True:
+			runType = input('Enter \'sel\' to use selenium or \'req\' to use reqests\n:')
+			if runType == 'sel' or runType == 'req':
+				break
+		if runType == 'sel':
+			self.crawlerSel(self.url)
+		elif runType == 'req':
+			self.crawlerReq(self.url)
 
 ########################################################RUN###################################################################
+try:
+	spider = Spider('http://192.168.86.115')
+	spider.run()
+except:
+	print(traceback.format_exc())
 
-run()
+
