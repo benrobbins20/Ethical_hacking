@@ -11,6 +11,7 @@ class Spider:
 		self.storeLinks = []
 		self.ua = UserAgent()
 		self.url = url
+		self.session = requests.Session()
 		
 	def parseLinks(self,get): #using regex to parse href links not bs yet, returns a list 
 		if isinstance(get,bytes):
@@ -76,11 +77,13 @@ class Spider:
 			if '#' in link:
 				link = link.split('#')[0]
 			if url in link and link not in self.storeLinks:
-				print(link)
+				#print(link)
+				self.storeLinks.append(link)
+		#return self.storeLinks
 
 	def reqGet(self,url):
 		try:
-			response = requests.get(url,headers = {'User-Agent': self.ua.random})
+			response = self.session.get(url,headers = {'User-Agent': self.ua.random})
 			if response.status_code == 200:
 				return response.content
 		except Exception:
