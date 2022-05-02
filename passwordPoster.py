@@ -21,7 +21,6 @@ def post(url):
                 if resp.status_code == 200:
                     #html = resp.json() #prettifed html
                     if b'Login failed' not in resp.content:#<div class="message">Login failed</div>, if password is successful:
-                        return (data)
+                        return (url,data)
                 
             return (f'Password not found')
-				

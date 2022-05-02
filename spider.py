@@ -86,6 +86,8 @@ class Spider:
 			response = self.session.get(url,headers = {'User-Agent': self.ua.random})
 			if response.status_code == 200:
 				return response.content
+			else:
+				return None
 		except Exception:
 			print(traceback.format_exc())
 			return None
