@@ -1,6 +1,7 @@
 from spider import Spider
 from bs4 import BeautifulSoup
 import argparse
+import passwordPoster as pp
 
 class Args:
     def __init__(self):
@@ -14,10 +15,10 @@ class Vulnscan:
 	def __init__(self,url):
 		self.spider = Spider(url)
 		self.url = url
-		self.storeLinks = spider.storeLinks
+		self.storeLinks = self.spider.storeLinks
 
 	def listLinks(self,lst):
-		spider.run()
+		self.spider.run()
 		self.storeLinks = self.spider.storeLinks # not sure how to do this best, would want to pass the list straight to the method, call spider.run seperate
 		for link in lst:
 			print(link)
@@ -28,19 +29,28 @@ class Vulnscan:
 		postData = {}
 		print(bsparse)
 	
+	def sessionSpider(self,dataDict):
+		self.spider.run() #run spider to get spider links
+		#print(self.spider.storeLinks)
+		for link in self.spider.storeLinks: #for loops to get forms for each each page
+			html = self.spider.reqGet(link)
+			bsparse = BeautifulSoup(html,"html.parser")
+			forms = bsparse.findAll('form')
+			if forms:
 
-
-
-
+				print(forms)
+	def returnCreds(self,url): #uses post script to get creds
+		return pp.post(url)
 
 #########################################################RUN#######################################################
 
-
-
 args = Args()
 v1 = Vulnscan(args.url)
+creds = (v1.returnCreds(args.url))
+v1.sessionSpider(creds)
+
 #v1.listLinks(v1.storeLinks)
-v1.postData()
+#v1.postData()
 
 
 
