@@ -25,4 +25,3 @@ def post(url):
                 
             return (f'Password not found')
 				
-print(post(args.url))
