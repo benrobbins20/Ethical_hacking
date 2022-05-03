@@ -5,13 +5,26 @@ from urllib.parse import urljoin
 from selenium import webdriver
 from bs4 import BeautifulSoup
 
+class fc:
+    rw = '\033[31;107m'
+    r = '\033[38;5;196m'
+    pv = '\033[38;5;206;48;5;57m'
+    end = '\033[0m'
+    p = '\033[38;5;206m'
+    y = '\033[0;33;40m'
+    pu = '\033[0;35m'
+    wg = '\033[37;42m'
+    cy = '\033[36m'
+    g = '\033[38;5;154m'
+    b = '\033[38;5;45m'
+
 class Spider:
-	
 	def __init__(self,url):
 		self.storeLinks = []
 		self.ua = UserAgent()
 		self.url = url
 		self.session = requests.Session()
+		print(f'{fc.cy}Spider session created:{fc.end} {fc.wg}{self.session}{fc.end}')
 		
 	def parseLinks(self,get): #using regex to parse href links not bs yet, returns a list 
 		if isinstance(get,bytes):
@@ -110,6 +123,7 @@ class Spider:
 		return (browser.page_source)# when requests or self.urllib does not work, can run selenium headless to get page source
 	
 	def run(self):
+	
 		if not self.url.endswith('/'):
 			self.url = self.url + '/'
 		while True:
