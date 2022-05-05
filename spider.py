@@ -19,11 +19,13 @@ class fc:
     b = '\033[38;5;45m'
 
 class Spider:
-	def __init__(self,url):
+	def __init__(self,url,ignore=None): #ignore is an array of links to ignore, (logout.php)
 		self.storeLinks = []
 		self.ua = UserAgent()
 		self.url = url
 		self.session = requests.Session()
+		self.ignore = ignore
+		print(f'{fc.pu}#{fc.end}'*100)
 		print(f'{fc.cy}Spider session created:{fc.end} {fc.wg}{self.session}{fc.end}')
 		
 	def parseLinks(self,get): #using regex to parse href links not bs yet, returns a list 
@@ -64,7 +66,7 @@ class Spider:
 				link = urljoin(url,link)
 			if '#' in link:
 				link = link.split('#')[0]
-			if url in link and link not in self.storeLinks:
+			if url in link and link not in self.storeLinks and link not in self.ignore:
 				self.storeLinks.append(link)
 				#print(link)
 				try:
@@ -123,17 +125,16 @@ class Spider:
 		return (browser.page_source)# when requests or self.urllib does not work, can run selenium headless to get page source
 	
 	def run(self):
-	
 		if not self.url.endswith('/'):
 			self.url = self.url + '/'
-		while True:
-			validateURL = input(f'Confirm URL: {self.url}\nURL Correct? y/n\n:')
-			validateURL = validateURL.lower()
-			if validateURL == 'y':
-				break
-			elif validateURL == 'n':
-				print('URL error, Qutting...')
-				sys.exit()
+		# while True:
+		# 	validateURL = input(f'Confirm URL: {self.url}\nURL Correct? y/n\n:')
+		# 	validateURL = validateURL.lower()
+		# 	if validateURL == 'y':
+		# 		break
+		# 	elif validateURL == 'n':
+		# 		print('URL error, Qutting...')
+		# 		sys.exit()
 		while True:
 			runType = input('Enter \'sel\' to use selenium | \'req\' to use requests | \'get\' to parse links for one url\n:')
 			if runType in  ['sel', 'req', 'get']:
@@ -145,14 +146,37 @@ class Spider:
 		elif runType == 'get':
 			self.crawlerBase(self.url)
 
+	def getForms(self,url):
+		response = self.session.get(url,headers = {'User=Agent': self.ua.random})
+		if b'</form>' in response.content: # simple check to see if there is a form tag
+			soup = BeautifulSoup(response.content,'html.parser')
+			forms = soup.findAll('form') # returns list of forms found by bs 
+			return forms
+		
+
+	def postForm(self,forms,value,url): # can pass a list in for forms but should only be 1 item
+		for form in forms:
+			action = form.get('action')
+			fullurl = (urljoin(url, action))
+			method = form.get('method')
+			print(
+			f'\n{fc.p}Link: {fullurl}{fc.end}\n'
+			f'{fc.p}Action: {action}{fc.end}'
+			)
+			inputList = form.findAll('input')
+			postData = {}
+			for i in inputList:
+				inputName = i.get('name')
+				inputType = i.get('type')
+				inputValue = i.get('value')
+				if inputType == 'text':
+					inputValue = value
+				postData[inputName] = inputValue
+				if method == 'post':
+					return self.session.post(fullurl,data=postData)
+				return self.session.get(fullurl,params=postData)
+
 ########################################################RUN###################################################################
-#try:
-	#spider = Spider('http://192.168.86.115')
-	#linklist = spider.parseLinks(spider.selGet())
-	#print(linklist)
-	#spider.run()
-	#print(spider.storeLinks)
-#except:
-	#print(traceback.format_exc())
+
 
 

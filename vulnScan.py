@@ -1,6 +1,6 @@
 from spider import Spider
 from bs4 import BeautifulSoup
-import argparse, requests
+import argparse, requests, json
 from urllib.parse import urljoin
 
 class fc:
@@ -24,8 +24,8 @@ class Args:
         self.url = options.url
 
 class Vulnscan:
-	def __init__(self,url):
-		self.spider = Spider(url)
+	def __init__(self,url): 
+		self.spider = Spider(url,['http://192.168.86.115/dvwa/logout.php'])
 		self.url = url
 		
 	def runSpider(self): # run spider will test the site and return list of what it can access
@@ -37,13 +37,11 @@ class Vulnscan:
 		else:
 			print('List is empty, check link and try again')
 
-	def sessionSpider(self,lst): # session spider will take a list and try to login and gather more links
+	def sessionSpider(self,lst):
 		for link in lst:
 			response = self.spider.reqGet(link)
 			if b'action=' in response and b'login.php' in response:
-				#print(link)
-				bs = BeautifulSoup(response,'html.parser')
-				forms = bs.findAll('form') # use forms even if one item , list
+				forms = self.spider.getForms(link)
 				if len(forms) == 1:
 					action = forms[0].get('action')
 					if 'login' in action:
@@ -57,7 +55,6 @@ class Vulnscan:
 							)
 						postData = {}
 						for i in inputList:
-							
 							#print(i.get('name')) # pass in the name of each input into dict of data
 							#print(i.get('type'))
 							#print(i.get('value'))
@@ -65,14 +62,13 @@ class Vulnscan:
 								postData[i.get('name')] = ''
 							else:
 								postData[i.get('name')] = i.get('type')
-						
 						creds = self.returnCreds(fullurl,postData,'admin')
 						if creds:
 							print(
-								f'{fc.pv}[+]{fc.end} {fc.g}Credentials found'
+							f'{fc.pv}[+]{fc.end} {fc.g}Credentials found for {fc.y}{fullurl}{fc.end}'
 							)
 							return[fullurl,creds]
-							
+		
 	def login(self,url,data):
 		print(
 		f'{fc.y}Logging in{fc.end}\n'
@@ -85,8 +81,6 @@ class Vulnscan:
 	def returnCreds(self,url,data,user):
 		if list(data.keys())[0] == 'username':
 			data['username'] = user
-		#print(url)
-		#print(data)
 		with open('/opt/wordlists/passwords.txt','r') as rf:
 			for password in rf:
 				password = password.strip()
@@ -95,25 +89,40 @@ class Vulnscan:
 				if b'Login failed' not in resp.content and b'Authentication Error' not in resp.content:#<div class="message">Login failed</div>, if password is successful:
 					#print(f'URL: {url}\nStatus code: {resp.status_code}\nCredentials: {data}\n')
 					return data
-				
 			print(f'{fc.r}Password not found for {url}{fc.end}')
 	
 	def listLinks(self,lst):
 		for link in lst:
 			print(f'{fc.b}{link}{fc.end}')
 
-
+	def checkForms(self,lst): #pass in a list to check each link for forms
+		for link in lst:
+			#print(f'{fc.g}{link}{fc.end}')
+			forms = self.spider.getForms(link)
+			if forms:
+				print(f'{fc.r}{link}{fc.end}\n{fc.b}{forms}{fc.end}')
 
 #########################################################RUN#######################################################
 
 args = Args()
 v1 = Vulnscan(args.url)
 v1.runSpider()
+#v1.checkForms(v1.spider.storeLinks)
 sesList = v1.sessionSpider(v1.spider.storeLinks)
-#print(sesList)
+
 v2 = Vulnscan(v1.url) # cant login with instance 1 and rerun the spider so start a new instance and login first using creds gathered from instance 1 
 v2.login(sesList[0],sesList[1])
-v2.listLinks(v2.runSpider())
+v2.runSpider()
+v2.checkForms(v2.spider.storeLinks)
+
+
+
+
+
+
+
+
+
 
 
 
