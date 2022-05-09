@@ -152,8 +152,9 @@ class Spider:
 			soup = BeautifulSoup(response.content,'html.parser')
 			forms = soup.findAll('form') # returns list of forms found by bs 
 			return forms
+		else:
+			return None
 		
-
 	def postForm(self,forms,value,url): # can pass a list in for forms but should only be 1 item
 		for form in forms:
 			action = form.get('action')
@@ -175,8 +176,25 @@ class Spider:
 				if method == 'post':
 					return self.session.post(fullurl,data=postData)
 				return self.session.get(fullurl,params=postData)
+	
+	def runScan(self):
+		for link in self.storeLinks:
+			forms = self.getForms(link)
+			if forms != None:
+				for form in forms:
+					print(f'{fc.pv}[+]{fc.end} Discovering vulnerability for {fc.cy}{link}{fc.end}')
+				if '=' in link:
+					print(f'{fc.pv}[+]{fc.end} Testing {fc.cy}{link}{fc.end}')
+					# http://192.168.86.115/dvwa/vulnerabilities/xss_r/?name=%3Cscript%3Ealert(%27hax%27)%3C/script%3E
+					# http://192.168.86.115/dvwa/vulnerabilities/xss_r/?name=<script>alert('hax')</script>
+					# example of reflected xss that executes on whoever enters this url. 
+			else:
+				print(f'{fc.r}No forms in {link}{fc.end}')
+	def testXSS(self,form,url):
+		testScript = '<sCript>alert("test")</scriPt>'
+		response = self.postForm(form,testScript,url)
+		if testScript in response.content:
+			return True
+		
 
 ########################################################RUN###################################################################
-
-
-

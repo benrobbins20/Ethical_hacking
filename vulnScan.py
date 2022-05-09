@@ -1,6 +1,6 @@
 from spider import Spider
 from bs4 import BeautifulSoup
-import argparse, requests, json
+import argparse, requests, json, re
 from urllib.parse import urljoin
 
 class fc:
@@ -37,7 +37,7 @@ class Vulnscan:
 		else:
 			print('List is empty, check link and try again')
 
-	def sessionSpider(self,lst):
+	def testCreds(self,lst):
 		for link in lst:
 			response = self.spider.reqGet(link)
 			if b'action=' in response and b'login.php' in response:
@@ -67,16 +67,37 @@ class Vulnscan:
 							print(
 							f'{fc.pv}[+]{fc.end} {fc.g}Credentials found for {fc.y}{fullurl}{fc.end}'
 							)
-							return[fullurl,creds]
+							with open('creds.txt','w') as writeCred:
+								writeCred.write(fullurl)
+								writeCred.write(',')
+								writeCred.write(json.dumps(creds))
+								writeCred.write('\n')
+							#return[fullurl,creds]
 		
-	def login(self,url,data):
+	def login(self,url=None,data=None):
+		
+		print(f'Login session: {fc.wg}{self.spider.session}{fc.end}')
+		try:
+			with open('creds.txt','r') as creds:
+				for line in creds:
+					if 'http' in line:
+						url = line.strip()
+					if '{' in line:
+						print(type(line))
+						data = json.loads(line)
+						print(type(data))
+						
+		except FileNotFoundError:
+			print(f'{fc.r}Creds file not found, run testCreds on target{fc.end}')
+		
 		print(
 		f'{fc.y}Logging in{fc.end}\n'
 		f'{fc.b}URL:{fc.end} {fc.g}{url}{fc.end}\n'
 		f'{fc.b}data:{fc.end} {fc.g}{data}{fc.end}\n'
 		)
-		print(f'Login session: {fc.wg}{self.spider.session}{fc.end}')
+		print(f'url: {url}\ndata: {data}')
 		self.spider.session.post(url,data=data)
+		print(self.spider.session.post(url,data=data))
 	
 	def returnCreds(self,url,data,user):
 		if list(data.keys())[0] == 'username':
@@ -105,15 +126,19 @@ class Vulnscan:
 #########################################################RUN#######################################################
 
 args = Args()
-v1 = Vulnscan(args.url)
-v1.runSpider()
-#v1.checkForms(v1.spider.storeLinks)
-sesList = v1.sessionSpider(v1.spider.storeLinks)
+# v1 = Vulnscan(args.url)
+# v1.runSpider()
+# #v1.checkForms(v1.spider.storeLinks)
+# sesList = v1.testCreds(v1.spider.storeLinks)
 
-v2 = Vulnscan(v1.url) # cant login with instance 1 and rerun the spider so start a new instance and login first using creds gathered from instance 1 
-v2.login(sesList[0],sesList[1])
-v2.runSpider()
-v2.checkForms(v2.spider.storeLinks)
+v2 = Vulnscan(args.url) # cant login with instance 1 and rerun the spider so start a new instance and login first using creds gathered from instance 1 
+v2.login()
+print(v2.runSpider())
+#v2.checkForms(v2.spider.storeLinks)
+#forms = v2.spider.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r')
+#print(forms)
+#print(v2.testXSS())
+
 
 
 
