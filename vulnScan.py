@@ -72,32 +72,33 @@ class Vulnscan:
 								writeCred.write(',')
 								writeCred.write(json.dumps(creds))
 								writeCred.write('\n')
-							#return[fullurl,creds]
+							#return[fullurl,creds] # write to a file instead of returning, could exit loop early 
 		
 	def login(self,url=None,data=None):
-		
-		print(f'Login session: {fc.wg}{self.spider.session}{fc.end}')
 		try:
 			with open('creds.txt','r') as creds:
 				for line in creds:
 					if 'http' in line:
 						url = line.strip()
 					if '{' in line:
-						print(type(line))
+						#print(type(line))
 						data = json.loads(line)
-						print(type(data))
-						
+						#print(type(data))
 		except FileNotFoundError:
 			print(f'{fc.r}Creds file not found, run testCreds on target{fc.end}')
-		
+		print('\n',f'{fc.pu}={fc.end}'*50)
+		print(f'Login session: {fc.wg}{self.spider.session}{fc.end}')
 		print(
 		f'{fc.y}Logging in{fc.end}\n'
 		f'{fc.b}URL:{fc.end} {fc.g}{url}{fc.end}\n'
-		f'{fc.b}data:{fc.end} {fc.g}{data}{fc.end}\n'
+		f'{fc.b}data:{fc.end} {fc.g}{data}{fc.end}'
 		)
-		print(f'url: {url}\ndata: {data}')
-		self.spider.session.post(url,data=data)
-		print(self.spider.session.post(url,data=data))
+		login = self.spider.session.post(url,data=data)
+		if login.status_code == 200:
+			print(f'{fc.g}{login.status_code} OK{fc.end}\nLogged in to {fc.cy}{url}{fc.end}')
+			print(f'{fc.pu}={fc.end}'*50,'\n')
+		else:
+			print(f'{fc.r}URL or connection error{fc.end}')
 	
 	def returnCreds(self,url,data,user):
 		if list(data.keys())[0] == 'username':
@@ -123,6 +124,8 @@ class Vulnscan:
 			if forms:
 				print(f'{fc.r}{link}{fc.end}\n{fc.b}{forms}{fc.end}')
 
+	
+
 #########################################################RUN#######################################################
 
 args = Args()
@@ -133,11 +136,31 @@ args = Args()
 
 v2 = Vulnscan(args.url) # cant login with instance 1 and rerun the spider so start a new instance and login first using creds gathered from instance 1 
 v2.login()
-print(v2.runSpider())
+v2.runSpider()
+#print(v2.spider.reqGet('http://192.168.86.115/dvwa/vulnerabilities/xss_r'))
+
+# forms = v2.spider.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r')
+# print(forms)
+# testScript = '<sCript>alert("test")</scriPt>'
+# response = (v2.spider.postForm(forms,testScript,'http://192.168.86.115/dvwa/vulnerabilities/xss_r'))
+# print(testScript in str(response.content))
+# THIS WORKS
+
+
+
 #v2.checkForms(v2.spider.storeLinks)
-#forms = v2.spider.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r')
-#print(forms)
-#print(v2.testXSS())
+
+
+forms = v2.spider.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r/')
+print(v2.spider.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/',forms))
+print(v2.spider.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/'))
+# #THIS WORKS
+
+# (v2.runSpider())
+# (v2.spider.runScan())
+
+
+
 
 
 
