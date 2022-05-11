@@ -189,19 +189,19 @@ class Spider:
 				print(f'{fc.r}No inputs found on {fullurl}{fc.end}')
 				return None
 	    
-	def runScan(self):
-		for link in self.storeLinks:
+	def runScan(self,lst): # takes a list from another instance just like the login
+		for link in lst:
 			forms = self.getForms(link)
 			if forms:
 				print(f'{fc.pu}-{fc.end}'*50)
 				print(f'\n{fc.pv}[+]{fc.end} Discovering vulnerability for {fc.cy}{link}{fc.end}')
-				
-				
-					#print(f'{fc.pv}[+]{fc.end} {fc.g}XSS found at{fc.end} {fc.cy}{link}{fc.end}\nForm:\n\n{fc.pu}{forms}{fc.end}\n\n')
+				is_vulnerable = self.testXSS(link,forms)
+				if is_vulnerable:
+					print(f'{fc.pv}[+]{fc.end} {fc.g}XSS found at{fc.end} {fc.cy}{link}{fc.end}\nForm:\n\n{fc.pu}{forms}{fc.end}\n\n')
 			# if '=' in link:
 			# 	print(f'{fc.pv}[+]{fc.end} Testing {fc.cy}{link}{fc.end}')
 			# 	is_vulnerable = self.testXSS(link)
-			# 	if is_vulnerable:
+			# 	if is_vulnerable: 
 			# 		print(f'{fc.pv}[+]{fc.end} {fc.g}XSS found at{fc.end} {fc.cy}{url}{fc.end}\nForm:\n\n{fc.pu}{form}{fc.end}\n\n')
 			else:
 				print(f'{fc.pu}-{fc.end}'*50)

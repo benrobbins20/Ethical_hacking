@@ -136,7 +136,7 @@ args = Args()
 
 v2 = Vulnscan(args.url) # cant login with instance 1 and rerun the spider so start a new instance and login first using creds gathered from instance 1 
 v2.login()
-v2.runSpider()
+print(v2.runSpider())
 #print(v2.spider.reqGet('http://192.168.86.115/dvwa/vulnerabilities/xss_r'))
 
 # forms = v2.spider.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r')
@@ -151,13 +151,27 @@ v2.runSpider()
 #v2.checkForms(v2.spider.storeLinks)
 
 
-forms = v2.spider.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r/')
-print(v2.spider.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/',forms))
-print(v2.spider.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/'))
+# forms = v2.spider.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r/')
+# print(v2.spider.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/',forms))
+# print(v2.spider.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/'))
 # #THIS WORKS
 
 # (v2.runSpider())
 # (v2.spider.runScan())
+
+v3 = Vulnscan(args.url)
+v3.login()
+v3.spider.runScan(v2.spider.storeLinks)
+# for link in v2.spider.fuckedList:
+# 	print(link)
+# 	# forms = v3.spider.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r/')
+# 	# print(v3.spider.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/',forms))
+# 	forms = v3.spider.getForms(link)
+# 	print(v3.spider.testXSS(link,forms))
+
+
+
+
 
 
 
