@@ -126,10 +126,11 @@ class Vulnscan:
 			print(f'{fc.b}{link}{fc.end}')
 
 	def testXSS(self,url,forms=None): #forms can be list
-		testScript = '<script>alert("test")</script>'
+		testScript = '<sCript>alert("test")</scriPt>'
 		if forms: # makes sure that list is not empty
 			response = self.postForm(forms,testScript,url) # postForm can take a list and parse the bs4 object	
 			if response:
+				#print(response.text)
 				if response.status_code == 200:
 					print(f'Status code: {fc.g}{response.status_code} OK{fc.end}')
 				if testScript in str(response.content): # first check to make sure testscript is in the string of html
@@ -137,7 +138,7 @@ class Vulnscan:
 					postedForm = bsFormPage.findAll('form')
 					if postedForm: # second check to make sure page still has a form in the page
 						if testScript in str(bsFormPage) or testScript.lower() in str(bsFormPage): # third check to make sure the webpage contains the test script
-							#print(f'{fc.pv}URL{fc.end} {fc.rw}{url}{fc.end} {fc.pv}is vulnerable to XSS!{fc.end}')
+							print(f'{fc.pv}URL{fc.end} {fc.rw}{url}{fc.end} {fc.pv}is vulnerable to XSS!{fc.end}')
 							return True
 				else:
 					print(f'{fc.r}URL >>{fc.end} {fc.cy}{url}{fc.end} {fc.r}is not vulnerable to XSS.{fc.end}\n')
@@ -159,27 +160,20 @@ class Vulnscan:
 							testUrl = url + f'?{inputName}={testScript}'
 							print(f'Sending URL: {fc.g}{testUrl}{fc.end}')
 							response = self.spider.session.get(testUrl)
-							print(f'Status code: {response.status_code}')
+							if response.status_code == 200:
+								print(f'Status code: {fc.g}{response.status_code} OK{fc.end}')
 							if testScript in str(response.content):
 								bslinkPage = BeautifulSoup(response.content,'html.parser')
 								bslinkForms = bslinkPage.findAll('form')
-								print(len(bslinkForms))
-								if len(bslinkForms) == 1:
-									form = str(bslinkForms)[0]
-									if testScript in form:
-										print(form)
+								if bslinkForms:
 										print(f'{fc.pv}URL{fc.end} {fc.rw}{url}{fc.end} {fc.pv}is vulnerable to XSS!{fc.end}')
 										return True
-									else:
-										print(f'{fc.r}link not vulnerable{fc.end}')
-										return False
-										#print(bsLink)
-								elif len(bslinkForms) == 0:
-									print(f'{fc.rw}No forms in{fc.end} {fc.cy}{testUrl}{fc.end}\n{fc.rw}May only be vulnerable to Post exploit{fc.end}')
-									#print(bslinkPage)
-							else:
-								print(f'{fc.r}URL >>{fc.end} {fc.cy}{url}{fc.end} {fc.r}is not vulnerable to XSS.{fc.end}')
+							else: 
+								print(f'{fc.rw}No forms in{fc.end} {fc.cy}{testUrl}{fc.end}\n{fc.rw}May only be vulnerable to Post exploit{fc.end}') # if testScripts were found in webpage but if no forms are found after sending links then page likely errored out
 								return False
+					else:
+						print(f'{fc.r}URL >>{fc.end} {fc.cy}{url}{fc.end} {fc.r}is not vulnerable to XSS.{fc.end}')
+						return False
 			else:
 				print(f'{fc.r}URL >>{fc.end} {fc.cy}{url}{fc.end} {fc.r}is not vulnerable to XSS.{fc.end}')
 				return False
@@ -228,7 +222,9 @@ class Vulnscan:
 						#print(f'{fc.pv}[+]{fc.end} {fc.g}XSS found at{fc.end} {fc.cy}{link}{fc.end}\nForm:\n\n{fc.pu}{forms}{fc.end}\n\n')
 						print(f'{fc.pv}[+]{fc.end} {fc.g}XSS found at{fc.end} {fc.cy}{link}{fc.end}')
 						print(f'{fc.p}Performing URL crosscheck{fc.end}')
-						print(self.testXSS(link))
+						if self.testXSS(link):
+							print('\n\n')
+							print(f'{fc.pv}{link} is vulnerable to post exploit and link exploit{fc.end}')
 
 				elif '=' in link:
 					print(f'{fc.pv}[+]{fc.end} Testing {fc.cy}{link}{fc.end}')
@@ -312,5 +308,5 @@ runALL()
 # v4.login()
 # forms = v4.getForms('http://192.168.86.115/dvwa/vulnerabilities/xss_r/')
 # v4.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/',forms)
-#v4.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/')
+# v4.testXSS('http://192.168.86.115/dvwa/vulnerabilities/xss_r/')
 
