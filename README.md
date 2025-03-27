@@ -1,1 +1,1 @@
-Trying to make git work can be a pain. Hopefully I can stick with this repo for ethical hacking scripts. Scripts will be a mix of Zsec's class and then ideally some personal projects including python and bash scripts used for HTB and OSCP
+
